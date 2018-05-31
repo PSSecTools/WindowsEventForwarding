@@ -18,7 +18,7 @@ function Get-WEFSubscription {
 
         .EXAMPLE
         Get-WEFSubscription -Name MySubscription, Subscription2
-        Display only a specific subscriptions 
+        Display subscriptions by name. Multiple values are supported
 
         .EXAMPLE
         Get-ADComputer Server01 | Get-WEFSubscription -Name MySubscription
