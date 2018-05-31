@@ -17,21 +17,46 @@ function Get-WEFSubscription {
         Display all available subscription 
 
         .EXAMPLE
-        Get-WEFSubscription -Name MySubscription
-        Display only a specific subscription 
+        Get-WEFSubscription -Name MySubscription, Subscription2
+        Display only a specific subscriptions 
 
         .EXAMPLE
-        Get-WEFSubscription MySubscription1, Subscription2
-        Display multiple subscription.
+        Get-ADComputer Server01 | Get-WEFSubscription -Name MySubscription
+        Display subscription from one or more active directory servers.
 
-        #>
-    [CmdletBinding(DefaultParameterSetName = 'DefaultParameterSet',
+        .EXAMPLE
+        "MySubscription" | Get-WEFSubscription -ComputerName Server01 
+        Display one or more subscription from one or more remote server.
+
+        .EXAMPLE
+        $Session | Get-WEFSubscription "MySubscription*" 
+        Display subscriptions from an existing PSRemoting session.
+        The $session variable has to be declared before. (e.g. $Session = New-PSSession -ComputerName Server01)
+
+    #>
+    [CmdletBinding( DefaultParameterSetName = 'DefaultParameterSet',
         SupportsShouldProcess = $false,
         PositionalBinding = $true,
         ConfirmImpact = 'Low')]
     Param(
         # The name of the subscription
         [Parameter(Mandatory = $false,
+            ParameterSetName = 'DefaultParameterSet',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithComputerName',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithComputerADObject',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithSession',
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
             Position = 0)]
@@ -43,40 +68,67 @@ function Get-WEFSubscription {
             ParameterSetName = 'RemotingWithComputerName',
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false)]
-        [Alias("host", "hostname", "Computer")]
-        [String]$ComputerName,
+        [Alias("host", "hostname", "Computer", "DNSHostName")]
+        [String[]]$ComputerName,
+
+        # helper object to enable pipelining with actrivedirectory cmdlets
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithComputerADObject',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true)]
+        [Alias()]
+        [Microsoft.ActiveDirectory.Management.ADComputer]$ADComputer,
+
+        # For usage with existing PSRemoting session
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithSession',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $false)]
+        [Alias()]
+        [System.Management.Automation.Runspaces.PSSession]$Session,
 
         # Credentials for remote computer (PSRemoting required)
         [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithComputerName',
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false)]
-        [Alias()]
-        [pscredential]$Credential,
-
-        # Existing PSRemoting session
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithSession',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [Alias("PSSession")]
-        [System.Management.Automation.Runspaces.PSSession]$Session
-
+            ParameterSetName = 'RemotingWithComputerADObject',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false)]
+        [Alias()]
+        [pscredential]$Credential
     )
 
     Begin {
-        if($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") {
+    }
+
+    Process {
+        # work arround for wrong parameter pipeline parsing. Don't know why this occours.
+        if ($PsCmdlet.ParameterSetName -eq "RemotingWithSession") { if ($Name -eq $Session.Name) { $Name = "" } }
+        if ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") { 
+            $ComputerName = $ADComputer.DNSHostName
+            if (-not $ComputerName) { $ComputerName = $ADComputer.Name }
+            if (-not $ComputerName) { throw "Unexpected behavior, unable to get machine name from ADComputer object" }
+            if ($Name -eq $ADComputer.Name) { $Name = "" }
+        }
+
+        # creating session when remoting is used and a session isn't already available
+        if( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
+            Write-Verbose "Use $($PsCmdlet.ParameterSetName). Creating session to '$($ComputerName)'"
             $Local:Parameter = @{
                 ComputerName = $ComputerName
                 Name = "WEFSession"
             }
-            if($Credential) { $Parameter.Add("Credential", $Credential) }
+            if ($Credential) { $Parameter.Add("Credential", $Credential) }
             $Session = New-PSSession @Parameter
+            Write-Debug "Session '$($Session.Name)' to $($Session.ComputerName) created."
             Remove-Variable -Name Parameter -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         }
 
+        # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
         Write-Debug "Check service 'Windows Event Collector'"
-        if($Session) {
+        if ($Session) {
             $Service = Invoke-Command -Session $Session -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
         } else {
             $Service = Get-Service -Name "wecsvc" -ErrorAction Stop
@@ -84,32 +136,35 @@ function Get-WEFSubscription {
         if ($Service.Status -ne 'Running') {
             throw "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
         }
-        if($Session) {
-            $SubscriptionEnumeration = Invoke-Command -Session $Session -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" } -ErrorAction Stop
-        } else {
-            $SubscriptionEnumeration = . "$env:windir\system32\wecutil.exe" "enum-subscription"
-        }
-    }
-
-    Process {
-        if (-not $Name) {
-            Write-Debug "No subscription specified. Query all subscriptions."
-            if($Session) {
-                [array]$Name = Invoke-Command -Session $Session -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" } -ErrorAction Stop
-            } else {
-                [array]$Name = . "$env:windir\system32\wecutil.exe" "enum-subscription"
-            }
-        }
         
+        # Get a list of names for all subscriptions available on the system
+        if ($Session) {
+            Write-Debug "Enumerating subscriptions on $($Session.ComputerName)"
+            $SubscriptionEnumeration = Invoke-Command -Session $Session -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" } -ErrorAction Stop
+            Write-Verbose "Found $($SubscriptionEnumeration.count) subscription(s) on $($Session.ComputerName)"
+        } else {
+            Write-debug "Enumerating subscriptions on local sytem"
+            $SubscriptionEnumeration = . "$env:windir\system32\wecutil.exe" "enum-subscription"
+            Write-Verbose "Found $($SubscriptionEnumeration.count) subscription(s) on local sytem"
+        }
+
+        # if parameter name is not specified - 
+        if (-not $Name) { 
+            Write-Verbose "No name specified. Query all available subscriptions"
+            [array]$Name = $SubscriptionEnumeration 
+        }
+
+        # Looping through every name from parameter, or every subscription found in the system (if parameter was not specified)
         foreach ($NameItem in $Name) { 
             $SubscriptionItemsToQuery = $SubscriptionEnumeration -like $NameItem
             if ($SubscriptionItemsToQuery) {
                 $Subcriptions = @()
-                #$SubscriptionItemToQuery = "NonDomainComputer"
                 foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
-                    if($Session) {
+                    if ($Session) {
+                        Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on $($Session.ComputerName)"
                         [xml]$result = Invoke-Command -Session $Session -ScriptBlock { . "$env:windir\system32\wecutil.exe" "get-subscription" $using:SubscriptionItemToQuery "/format:xml" } -ErrorAction Stop
                     } else {
+                        Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on local system"
                         [xml]$result = . "$env:windir\system32\wecutil.exe" "get-subscription" $SubscriptionItemToQuery "/format:xml"
                     }
                     $Subcriptions += $result
@@ -117,9 +172,15 @@ function Get-WEFSubscription {
                 }
                 
             }
-
-            if($Subcriptions) {
+            
+            # Transforming xml infos to powershell objects
+            if(-not $Subcriptions) {
+                Write-Warning "No subscription '$($NameItem)' found on $(if($Session) { $Session.ComputerName } else { "local system"} )"
+            } else {
                 foreach ($Subcription in $Subcriptions) { 
+                    Write-Debug "Working on subscription $($Subcription.Subscription.SubscriptionId)"
+                    
+                    # The list of non domain targets for subscription
                     if ( $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
                         $AllowedSourceNonDomainComputers = New-Object -TypeName psobject -Property ([ordered]@{
                             AllowedSubjectList  = [String]::Join(', ',$Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
@@ -130,6 +191,7 @@ function Get-WEFSubscription {
                         [System.String]$AllowedSourceNonDomainComputers = ""
                     }
 
+                    # The list of domain targets for subscription
                     if ( $Subcription.Subscription.AllowedSourceDomainComputers ) { 
                         $SDDLObject = $Subcription.Subscription.AllowedSourceDomainComputers | ConvertFrom-SddlString
                         $AllowedSourceDomainComputers = $SDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
@@ -137,12 +199,7 @@ function Get-WEFSubscription {
                         [System.String]$AllowedSourceDomainComputers = "" 
                     }
 
-                    if ( ($Subcription.Subscription.Query.'#cdata-section').count -gt 1) {
-                        [System.String[]]$Query = ($Subcription.Subscription.Query.'#cdata-section').Trim()
-                    } else { 
-                        [System.String]$Query = ($Subcription.Subscription.Query.'#cdata-section').Trim()
-                    }
-
+                    # Compiling the output object
                     $SubscriptionObjectProperties = [ordered]@{
                         SubscriptionID                         = [System.String]$Subcription.Subscription.SubscriptionId
                         SubscriptionType                       = [System.String]$Subcription.Subscription.SubscriptionType
@@ -160,26 +217,25 @@ function Get-WEFSubscription {
                         CredentialsType                        = [System.String]$Subcription.Subscription.CredentialsType
                         AllowedSourceNonDomainComputers        = $AllowedSourceNonDomainComputers
                         AllowedSourceDomainComputers           = $AllowedSourceDomainComputers
-                        Query                                  = $Query
+                        Query                                  = [String]::Join("`n", ($Subcription.Subscription.Query.'#cdata-section').Trim() )
                         PublisherName                          = [System.String]$Subcription.Subscription.PublisherName
                         AllowedSourceDomainComputersSDDLString = $Subcription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
                     }
-                    
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
                     $Output
 
-                    Remove-Variable -Name AllowedSourceNonDomainComputers, AllowedSourceDomainComputers, Query, SDDLObject -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+                    # Clearing up the mess of variables
+                    Remove-Variable -Name AllowedSourceNonDomainComputers, AllowedSourceDomainComputers, SDDLObject -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
                 }
-            } else {
-                Write-Warning "No subscription '$($NameItem)' found"
             }
+        }
+
+        if ( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
+            $Session | Remove-PSSession -Confirm:$false 
         }
     }
 
     End {
-        if($Session) {
-            Remove-PSSession -Session $Session -Confirm:$false
-        }
     }
 }
