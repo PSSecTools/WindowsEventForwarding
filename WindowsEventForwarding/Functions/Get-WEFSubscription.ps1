@@ -114,11 +114,11 @@ function Get-WEFSubscription {
         }
 
         # creating session when remoting is used and a session isn't already available
-        if( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
+        if ( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
             Write-Verbose "Use $($PsCmdlet.ParameterSetName). Creating session to '$($ComputerName)'"
             $Local:Parameter = @{
                 ComputerName = $ComputerName
-                Name = "WEFSession"
+                Name         = "WEFSession"
             }
             if ($Credential) { $Parameter.Add("Credential", $Credential) }
             $Session = New-PSSession @Parameter
@@ -174,7 +174,7 @@ function Get-WEFSubscription {
             }
             
             # Transforming xml infos to powershell objects
-            if(-not $Subcriptions) {
+            if (-not $Subcriptions) {
                 Write-Warning "No subscription '$($NameItem)' found on $(if($Session) { $Session.ComputerName } else { "local system"} )"
             } else {
                 foreach ($Subcription in $Subcriptions) { 
@@ -183,10 +183,10 @@ function Get-WEFSubscription {
                     # The list of non domain targets for subscription
                     if ( $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
                         $AllowedSourceNonDomainComputers = New-Object -TypeName psobject -Property ([ordered]@{
-                            AllowedSubjectList  = [String]::Join(', ',$Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
-                            AllowedIssuerCAList = [String]::Join(', ',$Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA)
-                            DeniedSubjectList   = [String]::Join(', ',$Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject)
-                        })
+                                AllowedSubjectList  = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
+                                AllowedIssuerCAList = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA)
+                                DeniedSubjectList   = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject)
+                            })
                     } else { 
                         [System.String]$AllowedSourceNonDomainComputers = ""
                     }
