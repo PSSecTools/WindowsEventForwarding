@@ -10,7 +10,7 @@ function Get-WEFSubscription {
         Author: Andreas Bellstedt
 
         .LINK
-        https://github.com/AndiBellstedt/
+        https://github.com/AndiBellstedt/WindowsEventForwarding
 
         .EXAMPLE
         Get-WEFSubscription
