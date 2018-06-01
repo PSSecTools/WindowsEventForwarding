@@ -221,6 +221,7 @@ function Get-WEFSubscription {
                         PublisherName                          = [System.String]$Subcription.Subscription.PublisherName
                         AllowedSourceDomainComputersSDDLString = $Subcription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
+                        PSComputerName                         = $Session.ComputerName
                     }
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
                     $Output
