@@ -21,10 +21,6 @@ function Get-WEFSubscription {
         Display subscriptions by name. Multiple values are supported
 
         .EXAMPLE
-        Get-ADComputer Server01 | Get-WEFSubscription -Name MySubscription
-        Display subscription from one or more active directory servers.
-
-        .EXAMPLE
         "MySubscription" | Get-WEFSubscription -ComputerName Server01 
         Display one or more subscription from one or more remote server.
 
@@ -51,11 +47,6 @@ function Get-WEFSubscription {
             ValueFromPipelineByPropertyName = $true,
             Position = 0)]
         [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerADObject',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            Position = 0)]
-        [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithSession',
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
@@ -71,14 +62,6 @@ function Get-WEFSubscription {
         [Alias("host", "hostname", "Computer", "DNSHostName")]
         [String[]]$ComputerName,
 
-        # helper object to enable pipelining with actrivedirectory cmdlets
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerADObject',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [Alias()]
-        [Microsoft.ActiveDirectory.Management.ADComputer]$ADComputer,
-
         # For usage with existing PSRemoting session
         [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithSession',
@@ -92,10 +75,6 @@ function Get-WEFSubscription {
             ParameterSetName = 'RemotingWithComputerName',
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false)]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerADObject',
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
         [Alias()]
         [pscredential]$Credential
     )
@@ -106,15 +85,9 @@ function Get-WEFSubscription {
     Process {
         # work arround for wrong parameter pipeline parsing. Don't know why this occours.
         if ($PsCmdlet.ParameterSetName -eq "RemotingWithSession") { if ($Name -eq $Session.Name) { $Name = "" } }
-        if ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") { 
-            $ComputerName = $ADComputer.DNSHostName
-            if (-not $ComputerName) { $ComputerName = $ADComputer.Name }
-            if (-not $ComputerName) { throw "Unexpected behavior, unable to get machine name from ADComputer object" }
-            if ($Name -eq $ADComputer.Name) { $Name = "" }
-        }
 
         # creating session when remoting is used and a session isn't already available
-        if ( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
+        if ( $PsCmdlet.ParameterSetName -eq "RemotingWithComputerName" ) {
             Write-Verbose "Use $($PsCmdlet.ParameterSetName). Creating session to '$($ComputerName)'"
             $Local:Parameter = @{
                 ComputerName = $ComputerName
@@ -233,7 +206,7 @@ function Get-WEFSubscription {
             }
         }
 
-        if ( ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerName") -or ($PsCmdlet.ParameterSetName -eq "RemotingWithComputerADObject") ) {
+        if ( $PsCmdlet.ParameterSetName -eq "RemotingWithComputerName" ) {
             $Session | Remove-PSSession -Confirm:$false 
         }
     }
