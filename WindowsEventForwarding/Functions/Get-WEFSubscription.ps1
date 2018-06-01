@@ -222,6 +222,7 @@ function Get-WEFSubscription {
                         AllowedSourceDomainComputersSDDLString = $Subcription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
                         PSComputerName                         = $Session.ComputerName
+                        PSSession                              = $Session
                     }
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
                     $Output

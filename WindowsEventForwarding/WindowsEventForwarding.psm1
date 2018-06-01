@@ -31,6 +31,3 @@
 #-----------------------
 
 #endregion
-
-
-Export-ModuleMember -Function *-WEF**
