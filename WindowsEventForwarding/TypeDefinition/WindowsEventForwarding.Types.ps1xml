@@ -1,0 +1,14 @@
+﻿<Types>
+    <Type>
+    <Name>WEF.Subscription</Name>
+    <Members>
+        <ScriptProperty>
+            <Name>DUMMY</Name>
+            <GetScriptBlock>
+                $this.Name
+            </GetScriptBlock>
+        </ScriptProperty>
+
+    </Members>
+    </Type>
+</Types>
