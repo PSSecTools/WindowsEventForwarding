@@ -138,7 +138,7 @@ function Get-WEFSubscription {
                 }
             }
             if ($SubscriptionItemsToQuery) {
-                $Subcriptions = @()
+                $Subscriptions = @()
                 foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
                     if ($Session) {
                         Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on $($Session.ComputerName)"
@@ -147,33 +147,33 @@ function Get-WEFSubscription {
                         Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on local system"
                         [xml]$result = . "$env:windir\system32\wecutil.exe" "get-subscription" $SubscriptionItemToQuery "/format:xml"
                     }
-                    $Subcriptions += $result
+                    $Subscriptions += $result
                     Clear-Variable -Name result -Force -Confirm:$false -Verbose:$false
                 }
                 
             }
             
             # Transforming xml infos to powershell objects
-            if (-not $Subcriptions) {
+            if (-not $Subscriptions) {
                 Write-Warning "No subscription '$($NameItem)' found on $(if($Session) { $Session.ComputerName } else { "local system"} )"
             } else {
-                foreach ($Subcription in $Subcriptions) { 
-                    Write-Debug "Working on subscription $($Subcription.Subscription.SubscriptionId)"
+                foreach ($Subscription in $Subscriptions) { 
+                    Write-Debug "Working on subscription $($Subscription.Subscription.SubscriptionId)"
                     
                     # The list of non domain targets for subscription
-                    if ( $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
+                    if ( $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
                         $AllowedSourceNonDomainComputers = New-Object -TypeName psobject -Property ([ordered]@{
-                                AllowedSubjectList  = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
-                                AllowedIssuerCAList = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA)
-                                DeniedSubjectList   = [String]::Join(', ', $Subcription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject)
+                                AllowedSubjectList  = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
+                                AllowedIssuerCAList = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA)
+                                DeniedSubjectList   = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject)
                             })
                     } else { 
                         [System.String]$AllowedSourceNonDomainComputers = ""
                     }
 
                     # The list of domain targets for subscription
-                    if ( $Subcription.Subscription.AllowedSourceDomainComputers ) { 
-                        $SDDLObject = $Subcription.Subscription.AllowedSourceDomainComputers | ConvertFrom-SddlString
+                    if ( $Subscription.Subscription.AllowedSourceDomainComputers ) { 
+                        $SDDLObject = $Subscription.Subscription.AllowedSourceDomainComputers | ConvertFrom-SddlString
                         $AllowedSourceDomainComputers = $SDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
                     } else { 
                         [System.String]$AllowedSourceDomainComputers = "" 
@@ -181,34 +181,34 @@ function Get-WEFSubscription {
 
                     # Compiling the output object
                     $SubscriptionObjectProperties = [ordered]@{
-                        BaseObject                             = $Subcription
+                        BaseObject                             = $Subscription
                         PSSession                              = $Session
-                        SubscriptionID                         = [System.String]$Subcription.Subscription.SubscriptionId
-                        SubscriptionType                       = [System.String]$Subcription.Subscription.SubscriptionType
-                        Description                            = [System.String]$Subcription.Subscription.Description
-                        Enabled                                = [bool]$Subcription.Subscription.Enabled
-                        DeliveryMode                           = [System.String]$Subcription.Subscription.Delivery.Mode
-                        MaxItems                               = [System.Int32]$Subcription.Subscription.Delivery.Batching.MaxItems
-                        MaxLatencyTime                         = [System.UInt64]$Subcription.Subscription.Delivery.Batching.MaxLatencyTime
-                        HeartBeatIntervalTime                  = [System.UInt64]$Subcription.Subscription.Delivery.PushSettings.Heartbeat.Interval
-                        ReadExistingEvents                     = [bool]$Subcription.Subscription.ReadExistingEvents
-                        TransportName                          = [System.String]$Subcription.Subscription.TransportName
-                        ContentFormat                          = [System.String]$Subcription.Subscription.ContentFormat
-                        Locale                                 = [System.String]$Subcription.Subscription.Locale.Language
-                        LogFile                                = [System.String]$Subcription.Subscription.LogFile
-                        CredentialsType                        = [System.String]$Subcription.Subscription.CredentialsType
+                        SubscriptionID                         = [System.String]$Subscription.Subscription.SubscriptionId
+                        SubscriptionType                       = [System.String]$Subscription.Subscription.SubscriptionType
+                        Description                            = [System.String]$Subscription.Subscription.Description
+                        Enabled                                = [bool]::Parse($Subscription.Subscription.Enabled)
+                        DeliveryMode                           = [System.String]$Subscription.Subscription.Delivery.Mode
+                        MaxItems                               = [System.Int32]$Subscription.Subscription.Delivery.Batching.MaxItems
+                        MaxLatencyTime                         = [System.UInt64]$Subscription.Subscription.Delivery.Batching.MaxLatencyTime
+                        HeartBeatIntervalTime                  = [System.UInt64]$Subscription.Subscription.Delivery.PushSettings.Heartbeat.Interval
+                        ReadExistingEvents                     = [bool]::Parse($Subscription.Subscription.ReadExistingEvents)
+                        TransportName                          = [System.String]$Subscription.Subscription.TransportName
+                        ContentFormat                          = [System.String]$Subscription.Subscription.ContentFormat
+                        Locale                                 = [System.String]$Subscription.Subscription.Locale.Language
+                        LogFile                                = [System.String]$Subscription.Subscription.LogFile
+                        CredentialsType                        = [System.String]$Subscription.Subscription.CredentialsType
                         AllowedSourceNonDomainComputers        = $AllowedSourceNonDomainComputers
                         AllowedSourceDomainComputers           = $AllowedSourceDomainComputers
-                        Query                                  = [String]::Join("`n", ($Subcription.Subscription.Query.'#cdata-section').Trim() )
-                        PublisherName                          = [System.String]$Subcription.Subscription.PublisherName
-                        AllowedSourceDomainComputersSDDLString = $Subcription.Subscription.AllowedSourceDomainComputers
+                        Query                                  = [String]::Join("`n", ($Subscription.Subscription.Query.'#cdata-section').Trim() )
+                        PublisherName                          = [System.String]$Subscription.Subscription.PublisherName
+                        AllowedSourceDomainComputersSDDLString = $Subscription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
-                        PSComputerName                         = $Session.ComputerName.ToUpper()
+                        #PSComputerName                         = if($Session) { $Session.ComputerName.ToUpper() }
                     }
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
                     $Output.pstypenames.Insert(0, $BaseType)
                     $Output.pstypenames.Insert(0, $TypeName)
-                    $Output.pstypenames.Insert(0, "$($TypeName).$($Subcription.Subscription.SubscriptionType)")
+                    $Output.pstypenames.Insert(0, "$($TypeName).$($Subscription.Subscription.SubscriptionType)")
                     Write-Output -InputObject $Output
 
                     # Clearing up the mess of variables

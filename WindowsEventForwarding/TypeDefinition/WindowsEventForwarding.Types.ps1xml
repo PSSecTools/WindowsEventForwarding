@@ -36,6 +36,13 @@
         </ScriptProperty>
 
         <ScriptProperty>
+            <Name>PSComputerName</Name>
+            <GetScriptBlock>
+                if($this.PSSession) { $this.PSSession.ComputerName.ToUpper() }
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
             <Name>ComputerName</Name>
             <GetScriptBlock>
                 if($this.PSComputerName) {
