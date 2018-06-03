@@ -16,6 +16,7 @@
 
 #region Constants
 #--------------------------
+New-Variable -Option ReadOnly, Constant -Scope Script -Name BaseType -Value "WEF"
 
 #endregion
 

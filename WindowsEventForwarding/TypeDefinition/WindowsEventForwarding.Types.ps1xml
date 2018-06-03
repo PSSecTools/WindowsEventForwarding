@@ -2,10 +2,61 @@
     <Type>
     <Name>WEF.Subscription</Name>
     <Members>
+        
+        <AliasProperty>
+            <Name>Name</Name>
+            <ReferencedMemberName>
+                SubscriptionID
+            </ReferencedMemberName>
+        </AliasProperty>
+
+        <AliasProperty>
+            <Name>Type</Name>
+            <ReferencedMemberName>
+                SubscriptionType
+            </ReferencedMemberName>
+        </AliasProperty>
+
+        <AliasProperty>
+            <Name>Mode</Name>
+            <ReferencedMemberName>
+                DeliveryMode
+            </ReferencedMemberName>
+        </AliasProperty>
+
         <ScriptProperty>
-            <Name>DUMMY</Name>
+            <Name>Status</Name>
             <GetScriptBlock>
-                $this.Name
+                if($this.Enabled) {
+                    "Enabled"
+                } else {
+                    "Disabled"
+                }
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>ComputerName</Name>
+            <GetScriptBlock>
+                if($this.PSComputerName) {
+                    $this.PSComputerName
+                } else {
+                    $env:ComputerName
+                }
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>MaxLatency</Name>
+            <GetScriptBlock>
+                [timespan]::FromMilliseconds($this.MaxLatencyTime)
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>HeartBeatInterval</Name>
+            <GetScriptBlock>
+                [timespan]::FromMilliseconds($this.HeartBeatIntervalTime)
             </GetScriptBlock>
         </ScriptProperty>
 

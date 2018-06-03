@@ -80,6 +80,7 @@ function Get-WEFSubscription {
     )
 
     Begin {
+        $Local:TypeName = "$($BaseType).Subscription"
     }
 
     Process {
@@ -129,7 +130,13 @@ function Get-WEFSubscription {
 
         # Looping through every name from parameter, or every subscription found in the system (if parameter was not specified)
         foreach ($NameItem in $Name) { 
-            $SubscriptionItemsToQuery = $SubscriptionEnumeration -like $NameItem
+            if($SubscriptionEnumeration.count -gt 1) {
+                $SubscriptionItemsToQuery = $SubscriptionEnumeration -like $NameItem
+            } else {
+                if($SubscriptionEnumeration -like $NameItem) {
+                    [array]$SubscriptionItemsToQuery = $SubscriptionEnumeration
+                }
+            }
             if ($SubscriptionItemsToQuery) {
                 $Subcriptions = @()
                 foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
@@ -174,15 +181,17 @@ function Get-WEFSubscription {
 
                     # Compiling the output object
                     $SubscriptionObjectProperties = [ordered]@{
+                        BaseObject                             = $Subcription
+                        PSSession                              = $Session
                         SubscriptionID                         = [System.String]$Subcription.Subscription.SubscriptionId
                         SubscriptionType                       = [System.String]$Subcription.Subscription.SubscriptionType
                         Description                            = [System.String]$Subcription.Subscription.Description
-                        Enabled                                = [System.String]$Subcription.Subscription.Enabled
+                        Enabled                                = [bool]$Subcription.Subscription.Enabled
                         DeliveryMode                           = [System.String]$Subcription.Subscription.Delivery.Mode
                         MaxItems                               = [System.Int32]$Subcription.Subscription.Delivery.Batching.MaxItems
                         MaxLatencyTime                         = [System.UInt64]$Subcription.Subscription.Delivery.Batching.MaxLatencyTime
-                        HeartBeatInterval                      = [System.UInt64]$Subcription.Subscription.Delivery.PushSettings.Heartbeat.Interval
-                        ReadExistingEvents                     = [System.String]$Subcription.Subscription.ReadExistingEvents
+                        HeartBeatIntervalTime                  = [System.UInt64]$Subcription.Subscription.Delivery.PushSettings.Heartbeat.Interval
+                        ReadExistingEvents                     = [bool]$Subcription.Subscription.ReadExistingEvents
                         TransportName                          = [System.String]$Subcription.Subscription.TransportName
                         ContentFormat                          = [System.String]$Subcription.Subscription.ContentFormat
                         Locale                                 = [System.String]$Subcription.Subscription.Locale.Language
@@ -194,11 +203,13 @@ function Get-WEFSubscription {
                         PublisherName                          = [System.String]$Subcription.Subscription.PublisherName
                         AllowedSourceDomainComputersSDDLString = $Subcription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
-                        PSComputerName                         = $Session.ComputerName
-                        PSSession                              = $Session
+                        PSComputerName                         = $Session.ComputerName.ToUpper()
                     }
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
-                    $Output
+                    $Output.pstypenames.Insert(0, $BaseType)
+                    $Output.pstypenames.Insert(0, $TypeName)
+                    $Output.pstypenames.Insert(0, "$($TypeName).$($Subcription.Subscription.SubscriptionType)")
+                    Write-Output -InputObject $Output
 
                     # Clearing up the mess of variables
                     Remove-Variable -Name AllowedSourceNonDomainComputers, AllowedSourceDomainComputers, SDDLObject -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
