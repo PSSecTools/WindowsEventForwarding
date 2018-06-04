@@ -2,7 +2,127 @@
     <Type>
     <Name>WEF.Subscription</Name>
     <Members>
+        <ScriptProperty>
+            <Name>SubscriptionID</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.SubscriptionId
+            </GetScriptBlock>
+        </ScriptProperty>
         
+        <ScriptProperty>
+            <Name>SubscriptionType</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.SubscriptionType
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>Description</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Description
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>Enabled</Name>
+            <GetScriptBlock>
+                [bool]::Parse($this.BaseObject.Subscription.Enabled)
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>DeliveryMode</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Delivery.Mode
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>MaxItems</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxItems
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>MaxLatencyTime</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxLatencyTime
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>HeartBeatIntervalTime</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Delivery.PushSettings.Heartbeat.Interval
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>ReadExistingEvents</Name>
+            <GetScriptBlock>
+                [bool]::Parse($this.BaseObject.Subscription.ReadExistingEvents)
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>TransportName</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.TransportName
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>ContentFormat</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.ContentFormat
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>Locale</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.Locale.Language
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>LogFile</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.LogFile
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>CredentialsType</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.CredentialsType
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>Query</Name>
+            <GetScriptBlock>
+                [String]::Join("`n", ($this.BaseObject.Subscription.Query.'#cdata-section').Trim() )
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>PublisherName</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.PublisherName
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>AllowedSourceDomainComputersSDDLString</Name>
+            <GetScriptBlock>
+                [System.String]$this.BaseObject.Subscription.AllowedSourceDomainComputers
+            </GetScriptBlock>
+        </ScriptProperty>
+
+
+
         <AliasProperty>
             <Name>Name</Name>
             <ReferencedMemberName>

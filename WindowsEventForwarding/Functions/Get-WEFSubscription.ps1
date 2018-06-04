@@ -163,9 +163,9 @@ function Get-WEFSubscription {
                     # The list of non domain targets for subscription
                     if ( $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
                         $AllowedSourceNonDomainComputers = New-Object -TypeName psobject -Property ([ordered]@{
-                                AllowedSubjectList  = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject)
-                                AllowedIssuerCAList = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA)
-                                DeniedSubjectList   = [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject)
+                                AllowedSubjectList  = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) }})
+                                AllowedIssuerCAList = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) }})
+                                DeniedSubjectList   = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) }})
                             })
                     } else { 
                         [System.String]$AllowedSourceNonDomainComputers = ""
@@ -183,25 +183,25 @@ function Get-WEFSubscription {
                     $SubscriptionObjectProperties = [ordered]@{
                         BaseObject                             = $Subscription
                         PSSession                              = $Session
-                        SubscriptionID                         = [System.String]$Subscription.Subscription.SubscriptionId
-                        SubscriptionType                       = [System.String]$Subscription.Subscription.SubscriptionType
-                        Description                            = [System.String]$Subscription.Subscription.Description
-                        Enabled                                = [bool]::Parse($Subscription.Subscription.Enabled)
-                        DeliveryMode                           = [System.String]$Subscription.Subscription.Delivery.Mode
-                        MaxItems                               = [System.Int32]$Subscription.Subscription.Delivery.Batching.MaxItems
-                        MaxLatencyTime                         = [System.UInt64]$Subscription.Subscription.Delivery.Batching.MaxLatencyTime
-                        HeartBeatIntervalTime                  = [System.UInt64]$Subscription.Subscription.Delivery.PushSettings.Heartbeat.Interval
-                        ReadExistingEvents                     = [bool]::Parse($Subscription.Subscription.ReadExistingEvents)
-                        TransportName                          = [System.String]$Subscription.Subscription.TransportName
-                        ContentFormat                          = [System.String]$Subscription.Subscription.ContentFormat
-                        Locale                                 = [System.String]$Subscription.Subscription.Locale.Language
-                        LogFile                                = [System.String]$Subscription.Subscription.LogFile
-                        CredentialsType                        = [System.String]$Subscription.Subscription.CredentialsType
+                        #SubscriptionID                         = [System.String]$Subscription.Subscription.SubscriptionId
+                        #SubscriptionType                       = [System.String]$Subscription.Subscription.SubscriptionType
+                        #Description                            = [System.String]$Subscription.Subscription.Description
+                        #Enabled                                = [bool]::Parse($Subscription.Subscription.Enabled)
+                        #DeliveryMode                           = [System.String]$Subscription.Subscription.Delivery.Mode
+                        #MaxItems                               = [System.Int32]$Subscription.Subscription.Delivery.Batching.MaxItems
+                        #MaxLatencyTime                         = [System.UInt64]$Subscription.Subscription.Delivery.Batching.MaxLatencyTime
+                        #HeartBeatIntervalTime                  = [System.UInt64]$Subscription.Subscription.Delivery.PushSettings.Heartbeat.Interval
+                        #ReadExistingEvents                     = [bool]::Parse($Subscription.Subscription.ReadExistingEvents)
+                        #TransportName                          = [System.String]$Subscription.Subscription.TransportName
+                        #ContentFormat                          = [System.String]$Subscription.Subscription.ContentFormat
+                        #Locale                                 = [System.String]$Subscription.Subscription.Locale.Language
+                        #LogFile                                = [System.String]$Subscription.Subscription.LogFile
+                        #CredentialsType                        = [System.String]$Subscription.Subscription.CredentialsType
                         AllowedSourceNonDomainComputers        = $AllowedSourceNonDomainComputers
                         AllowedSourceDomainComputers           = $AllowedSourceDomainComputers
-                        Query                                  = [String]::Join("`n", ($Subscription.Subscription.Query.'#cdata-section').Trim() )
-                        PublisherName                          = [System.String]$Subscription.Subscription.PublisherName
-                        AllowedSourceDomainComputersSDDLString = $Subscription.Subscription.AllowedSourceDomainComputers
+                        #Query                                  = [String]::Join("`n", ($Subscription.Subscription.Query.'#cdata-section').Trim() )
+                        #PublisherName                          = [System.String]$Subscription.Subscription.PublisherName
+                        #AllowedSourceDomainComputersSDDLString = $Subscription.Subscription.AllowedSourceDomainComputers
                         AllowedSourceDomainComputersSDDLObject = $SDDLObject
                         #PSComputerName                         = if($Session) { $Session.ComputerName.ToUpper() }
                     }
