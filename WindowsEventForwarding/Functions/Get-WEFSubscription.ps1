@@ -35,25 +35,6 @@ function Get-WEFSubscription {
         PositionalBinding = $true,
         ConfirmImpact = 'Low')]
     Param(
-        # The name of the subscription
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'DefaultParameterSet',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            Position = 0)]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerName',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            Position = 0)]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithSession',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            Position = 0)]
-        [Alias("DisplayName", "SubscriptionID")]
-        [String[]]$Name,
-
         # Remote computer name. (PSRemoting required)
         [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithComputerName',
@@ -70,6 +51,25 @@ function Get-WEFSubscription {
         [Alias()]
         [System.Management.Automation.Runspaces.PSSession]$Session,
 
+        # The name of the subscription
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'DefaultParameterSet',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 0)]
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithComputerName',
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $false,
+            Position = 0)]
+        [Parameter(Mandatory = $false,
+            ParameterSetName = 'RemotingWithSession',
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false,
+            Position = 0)]
+        [Alias("DisplayName", "SubscriptionID")]
+        [String[]]$Name,
+        
         # Credentials for remote computer (PSRemoting required)
         [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithComputerName',
@@ -85,7 +85,7 @@ function Get-WEFSubscription {
 
     Process {
         # work arround for wrong parameter pipeline parsing. Don't know why this occours.
-        if ($PsCmdlet.ParameterSetName -eq "RemotingWithSession") { if ($Name -eq $Session.Name) { $Name = "" } }
+        #if ($PsCmdlet.ParameterSetName -eq "RemotingWithSession") { if ($Name -eq $Session.Name) { $Name = "" } }
 
         # creating session when remoting is used and a session isn't already available
         if ( $PsCmdlet.ParameterSetName -eq "RemotingWithComputerName" ) {
