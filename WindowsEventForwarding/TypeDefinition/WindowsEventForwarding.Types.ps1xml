@@ -1,231 +1,299 @@
 ﻿<Types>
     <Type>
-    <Name>WEF.Subscription</Name>
-    <Members>
-        <ScriptProperty>
-            <Name>SubscriptionID</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.SubscriptionId
-            </GetScriptBlock>
-        </ScriptProperty>
-        
-        <ScriptProperty>
-            <Name>SubscriptionType</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.SubscriptionType
-            </GetScriptBlock>
-        </ScriptProperty>
+        <Name>WEF.Subscription</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SubscriptionID</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.SubscriptionId
+                </GetScriptBlock>
+            </ScriptProperty>
+            
+            <ScriptProperty>
+                <Name>SubscriptionType</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.SubscriptionType
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>Description</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Description
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>Description</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Description
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>Enabled</Name>
-            <GetScriptBlock>
-                [bool]::Parse($this.BaseObject.Subscription.Enabled)
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>Enabled</Name>
+                <GetScriptBlock>
+                    [bool]::Parse($this.BaseObject.Subscription.Enabled)
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>DeliveryMode</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Delivery.Mode
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>DeliveryMode</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Delivery.Mode
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>MaxItems</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxItems
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>MaxItems</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxItems
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>MaxLatencyTime</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxLatencyTime
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>MaxLatencyTime</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Delivery.Batching.MaxLatencyTime
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>HeartBeatIntervalTime</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Delivery.PushSettings.Heartbeat.Interval
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>HeartBeatIntervalTime</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Delivery.PushSettings.Heartbeat.Interval
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>ReadExistingEvents</Name>
-            <GetScriptBlock>
-                [bool]::Parse($this.BaseObject.Subscription.ReadExistingEvents)
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>ReadExistingEvents</Name>
+                <GetScriptBlock>
+                    [bool]::Parse($this.BaseObject.Subscription.ReadExistingEvents)
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>TransportName</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.TransportName
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>TransportName</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.TransportName
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>ContentFormat</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.ContentFormat
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>ContentFormat</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.ContentFormat
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>Locale</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.Locale.Language
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>Locale</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.Locale.Language
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>LogFile</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.LogFile
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>LogFile</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.LogFile
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>CredentialsType</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.CredentialsType
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>Query</Name>
+                <GetScriptBlock>
+                    [String]::Join("`n", ($this.BaseObject.Subscription.Query.'#cdata-section').Trim() )
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>Query</Name>
-            <GetScriptBlock>
-                [String]::Join("`n", ($this.BaseObject.Subscription.Query.'#cdata-section').Trim() )
-            </GetScriptBlock>
-        </ScriptProperty>
-
-        <ScriptProperty>
-            <Name>PublisherName</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.PublisherName
-            </GetScriptBlock>
-        </ScriptProperty>
-
-        <ScriptProperty>
-            <Name>AllowedSourceDomainComputersSDDLString</Name>
-            <GetScriptBlock>
-                [System.String]$this.BaseObject.Subscription.AllowedSourceDomainComputers
-            </GetScriptBlock>
-        </ScriptProperty>
-
-        <ScriptProperty>
-            <Name>AllowedSourceDomainComputersSDDLObject</Name>
-            <GetScriptBlock>
-                $this.AllowedSourceDomainComputersSDDLString | ConvertFrom-SddlString
-            </GetScriptBlock>
-        </ScriptProperty>
-
-        <ScriptProperty>
-            <Name>AllowedSourceDomainComputers</Name>
-            <GetScriptBlock>
-                if ($this.AllowedSourceDomainComputersSDDLString) {
-                    $this.AllowedSourceDomainComputersSDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
-                } else { 
-                    [System.String]"" 
-                }
-            </GetScriptBlock>
-        </ScriptProperty>
-
-        <ScriptProperty>
-            <Name>AllowedSourceNonDomainComputers</Name>
-            <GetScriptBlock>
-                if ( $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) {
-                    New-Object -TypeName System.Management.Automation.PSCustomObject -Property ([ordered]@{
-                        AllowedSubjectList  = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) }})
-                        AllowedIssuerCAList = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) }})
-                        DeniedSubjectList   = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) }})
-                    })
-                } else {
-                    [System.String]""
-                }
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>PublisherName</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.PublisherName
+                </GetScriptBlock>
+            </ScriptProperty>
 
 
-        <AliasProperty>
-            <Name>Name</Name>
-            <ReferencedMemberName>
-                SubscriptionID
-            </ReferencedMemberName>
-        </AliasProperty>
+            <AliasProperty>
+                <Name>Name</Name>
+                <ReferencedMemberName>
+                    SubscriptionID
+                </ReferencedMemberName>
+            </AliasProperty>
 
-        <AliasProperty>
-            <Name>Type</Name>
-            <ReferencedMemberName>
-                SubscriptionType
-            </ReferencedMemberName>
-        </AliasProperty>
+            <AliasProperty>
+                <Name>Type</Name>
+                <ReferencedMemberName>
+                    SubscriptionType
+                </ReferencedMemberName>
+            </AliasProperty>
 
-        <AliasProperty>
-            <Name>Mode</Name>
-            <ReferencedMemberName>
-                DeliveryMode
-            </ReferencedMemberName>
-        </AliasProperty>
+            <AliasProperty>
+                <Name>Mode</Name>
+                <ReferencedMemberName>
+                    DeliveryMode
+                </ReferencedMemberName>
+            </AliasProperty>
 
-        <AliasProperty>
-            <Name>ReadExisting</Name>
-            <ReferencedMemberName>
-                ReadExistingEvents
-            </ReferencedMemberName>
-        </AliasProperty>
+            <AliasProperty>
+                <Name>ReadExisting</Name>
+                <ReferencedMemberName>
+                    ReadExistingEvents
+                </ReferencedMemberName>
+            </AliasProperty>
 
-        <ScriptProperty>
-            <Name>Status</Name>
-            <GetScriptBlock>
-                if($this.Enabled) {
-                    "Enabled"
-                } else {
-                    "Disabled"
-                }
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>Status</Name>
+                <GetScriptBlock>
+                    if($this.Enabled) {
+                        "Enabled"
+                    } else {
+                        "Disabled"
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>PSComputerName</Name>
-            <GetScriptBlock>
-                if($this.PSSession) { $this.PSSession.ComputerName.ToUpper() }
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>PSComputerName</Name>
+                <GetScriptBlock>
+                    if($this.PSSession) { $this.PSSession.ComputerName.ToUpper() }
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>ComputerName</Name>
-            <GetScriptBlock>
-                if($this.PSComputerName) {
-                    $this.PSComputerName
-                } else {
-                    $env:ComputerName
-                }
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>ComputerName</Name>
+                <GetScriptBlock>
+                    if($this.PSComputerName) {
+                        $this.PSComputerName
+                    } else {
+                        $env:ComputerName
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>MaxLatency</Name>
-            <GetScriptBlock>
-                [timespan]::FromMilliseconds($this.MaxLatencyTime)
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>MaxLatency</Name>
+                <GetScriptBlock>
+                    [timespan]::FromMilliseconds($this.MaxLatencyTime)
+                </GetScriptBlock>
+            </ScriptProperty>
 
-        <ScriptProperty>
-            <Name>HeartBeatInterval</Name>
-            <GetScriptBlock>
-                [timespan]::FromMilliseconds($this.HeartBeatIntervalTime)
-            </GetScriptBlock>
-        </ScriptProperty>
+            <ScriptProperty>
+                <Name>HeartBeatInterval</Name>
+                <GetScriptBlock>
+                    [timespan]::FromMilliseconds($this.HeartBeatIntervalTime)
+                </GetScriptBlock>
+            </ScriptProperty>
 
-    </Members>
+        </Members>
     </Type>
+
+
+    <Type>
+        <Name>WEF.Subscription.SourceInitiated</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>AllowedSourceDomainComputersSDDLString</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.AllowedSourceDomainComputers
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>AllowedSourceDomainComputersSDDLObject</Name>
+                <GetScriptBlock>
+                    $this.AllowedSourceDomainComputersSDDLString | ConvertFrom-SddlString
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>AllowedSourceDomainComputers</Name>
+                <GetScriptBlock>
+                    if ($this.AllowedSourceDomainComputersSDDLString) {
+                        $this.AllowedSourceDomainComputersSDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
+                    } else { 
+                        [System.String]"" 
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>AllowedSourceNonDomainComputers</Name>
+                <GetScriptBlock>
+                    if ( $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) {
+                        New-Object -TypeName System.Management.Automation.PSCustomObject -Property ([ordered]@{
+                            AllowedSubjectList  = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) }})
+                            AllowedIssuerCAList = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) }})
+                            DeniedSubjectList   = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) }})
+                        })
+                    } else {
+                        [System.String]""
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+
+
+    <Type>
+        <Name>WEF.Subscription.CollectorInitiated</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>CredentialsType</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.CredentialsType
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>UserName</Name>
+                <GetScriptBlock>
+                    [System.String]$this.BaseObject.Subscription.CommonUserName
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>Password</Name>
+                <GetScriptBlock>
+                    if([System.String]$this.BaseObject.Subscription.CommonPassword -eq '*') {
+                        #empty password
+                    } else {
+                        if($this.BaseObject.Subscription.CommonPassword.pstypenames -match "System.Security.SecureString") {
+                            $this.BaseObject.Subscription.CommonPassword | ConvertTo-SecureString -AsPlainText -Force
+                        } else {
+                            [System.Security.SecureString]$this.BaseObject.Subscription.CommonPassword
+                        }
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>TransportPort</Name>
+                <GetScriptBlock>
+                    [System.Int32]$this.BaseObject.Subscription.TransportPort
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>TargetList</Name>
+                <GetScriptBlock>
+                    foreach ($EventSource in $this.BaseObject.Subscription.EventSources.EventSource) {
+                        [PSCustomObject]@{
+                            Enabled = [bool]::Parse($EventSource.Enabled)
+                            ComputerName = $EventSource.Address
+                        }
+                    }
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>TargetEnabled</Name>
+                <GetScriptBlock>
+                    $this.BaseObject.Subscription.EventSources.EventSource | Where-Object Enabled -EQ $true | Select-Object -ExpandProperty Address
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>TargetDisabled</Name>
+                <GetScriptBlock>
+                    $this.BaseObject.Subscription.EventSources.EventSource | Where-Object Enabled -EQ $false | Select-Object -ExpandProperty Address
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+    
 </Types>
