@@ -21,6 +21,16 @@ function Get-WEFSubscription {
         Display subscriptions by name. Multiple values are supported
 
         .EXAMPLE
+        Get-WEFSubscription -Enabled $true
+        Display only subscriptions with status "enabled".
+        This can filter down the output.
+
+        .EXAMPLE
+        Get-WEFSubscription -ContentFormat RenderedText
+        Display only subscriptions with contentformat "RenderedText" set. 
+        This can filter down the output.
+
+        .EXAMPLE
         "MySubscription" | Get-WEFSubscription -ComputerName Server01 
         Display one or more subscription from one or more remote server.
 
@@ -70,6 +80,35 @@ function Get-WEFSubscription {
         [Alias("DisplayName", "SubscriptionID")]
         [String[]]$Name,
         
+        # Filter option for only return objects by specified type
+        [Parameter(Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false)]
+        [ValidateSet("SourceInitiated", "CollectorInitiated")]
+        [string]$Type,
+
+        # Filter option for only return objects by state
+        [Parameter(Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false)]
+        #[ValidateSet("Enable", "Disabled", "Everything")]
+        [ValidateSet($true, $false)]
+        [String]$Enabled,
+
+        # Filter option for only return objects by state of ReadExistingEvents
+        [Parameter(Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false)]
+        [ValidateSet($true, $false)]
+        [string]$ReadExistingEvents,
+
+        # Filter option for only return objects by specified content format
+        [Parameter(Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false)]
+        [ValidateSet("Events", "RenderedText")] 
+        [string]$ContentFormat,
+
         # Credentials for remote computer (PSRemoting required)
         [Parameter(Mandatory = $false,
             ParameterSetName = 'RemotingWithComputerName',
@@ -81,6 +120,8 @@ function Get-WEFSubscription {
 
     Begin {
         $Local:TypeName = "$($BaseType).Subscription"
+        if($Enabled) { [bool]$FilterEnabled = [bool]::Parse($Enabled) }
+        if($ReadExistingEvents) { [bool]$FilterExistingEvents = [bool]::Parse($ReadExistingEvents) }
     }
 
     Process {
@@ -149,7 +190,7 @@ function Get-WEFSubscription {
                 # Query subscription infos if there is a matchin g subscription in the list
                 if ($SubscriptionItemsToQuery) {
                     $Subscriptions = @()
-                    foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
+                    [array]$Subscriptions = foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
                         if ($Session) {
                             Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on $($Session.ComputerName)"
                             [xml]$result = Invoke-Command -Session $Session -ScriptBlock { . "$env:windir\system32\wecutil.exe" "get-subscription" $using:SubscriptionItemToQuery "/format:xml" } -ErrorAction Stop
@@ -157,15 +198,26 @@ function Get-WEFSubscription {
                             Write-Verbose "Query subscription '$($SubscriptionItemToQuery)' on local system"
                             [xml]$result = . "$env:windir\system32\wecutil.exe" "get-subscription" $SubscriptionItemToQuery "/format:xml"
                         }
-                        $Subscriptions += $result
-                        Clear-Variable -Name result -Force -Confirm:$false -Verbose:$false
+                        
+                        # Apply filter - if specified in parameters
+                        $Output = $true
+                        if($Output -and $Type) { if($Type -eq $result.Subscription.SubscriptionType) { $Output = $true } else { $Output = $false } }
+                        if($Output -and $Enabled) { if($FilterEnabled -eq [bool]::Parse($result.Subscription.Enabled)) { $Output = $true } else { $Output = $false } }
+                        if($Output -and $ReadExistingEvents ) { if($FilterExistingEvents -eq [bool]::Parse($result.Subscription.ReadExistingEvents)) { $Output = $true } else { $Output = $false } }
+                        if($Output -and $ContentFormat ) { if($ContentFormat -eq $result.Subscription.ContentFormat) { $Output = $true } else { $Output = $false } }
+
+                        # Output if filtering is okay
+                        if($Output) { $result }
+
+                        # Clean up the mess
+                        Clear-Variable -Name result, Output -Force -Confirm:$false -Verbose:$false
                     }
                     
                 }
                 
                 # Transforming xml infos to powershell objects
                 if (-not $Subscriptions) {
-                    Write-Warning "No subscription '$($NameItem)' found on $(if($Session) { $Session.ComputerName } else { "local system"} )"
+                    Write-Verbose "Subscription '$($NameItem)' not found on $(if($Session) { $Session.ComputerName } else { "local system"} ) or filtered out."
                 } else {
                     foreach ($Subscription in $Subscriptions) { 
                         Write-Debug "Working on subscription $($Subscription.Subscription.SubscriptionId)"
@@ -199,5 +251,7 @@ function Get-WEFSubscription {
     }
 
     End {
+        # Clearing up the mess of variables
+        Remove-Variable -Name FilterEnabled, FilterExistingEvents, TypeName -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
     }
 }
