@@ -94,14 +94,7 @@ function Get-WEFSubscription {
                 ErrorVariable = "SessionError"
             }
             if ($Credential) { $Parameter.Add("Credential", $Credential) }
-            try {
                 $Session = New-PSSession @Parameter
-            } catch {
-                $SessionError
-                continue
-                Write-Verbose "continue" -Verbose
-                break
-            }
             Write-Debug "Session '$($Session.Name)' to $($Session.ComputerName) created."
             Remove-Variable -Name Parameter -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         }
