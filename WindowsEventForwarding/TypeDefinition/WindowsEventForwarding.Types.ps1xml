@@ -176,6 +176,13 @@
             </ReferencedMemberName>
         </AliasProperty>
 
+        <AliasProperty>
+            <Name>ReadExisting</Name>
+            <ReferencedMemberName>
+                ReadExistingEvents
+            </ReferencedMemberName>
+        </AliasProperty>
+
         <ScriptProperty>
             <Name>Status</Name>
             <GetScriptBlock>

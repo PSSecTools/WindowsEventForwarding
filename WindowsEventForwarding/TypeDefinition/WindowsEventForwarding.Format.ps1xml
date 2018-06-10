@@ -11,15 +11,57 @@
             <TableControl>
                 <TableHeaders>   <!-- Multiple TableColumnHeader elements possible, but the number of TableRowEntry elements must be the same. -->
                     <TableColumnHeader>
-                        <Label>DUMMY</Label> 
-                    </TableColumnHeader>  
+                        <Label>ComputerName</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Name</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Type</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Enabled</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ReadExisting</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>ContentFormat</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Locale</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>LogFile</Label>
+                    </TableColumnHeader>
                 </TableHeaders>
             
                 <TableRowEntries>
                     <TableRowEntry>
                         <TableColumnItems>
                             <TableColumnItem> 
-                                <PropertyName>DUMMY</PropertyName>
+                                <PropertyName>ComputerName</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>Name</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>Type</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>Enabled</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>ReadExisting</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>ContentFormat</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>Locale</PropertyName>
+                            </TableColumnItem> 
+                            <TableColumnItem> 
+                                <PropertyName>LogFile</PropertyName>
                             </TableColumnItem> 
                         </TableColumnItems> 
                     </TableRowEntry> 
@@ -38,7 +80,7 @@
                 <WideEntries>
                     <WideEntry>
                         <WideItem> <!-- Only single WideItem elements possible. With Propertyname, or with Scriptblock as the item to be displayed -->
-                            <ScriptBlock>"$($_.Name) $($_.Status) $($_.PSComputerName)"</ScriptBlock>
+                            <ScriptBlock>$_.PSComputerName + "\" + $_.Name + " (" + $_.Status + ")"</ScriptBlock>
                         </WideItem>
                     </WideEntry>
                 </WideEntries>
