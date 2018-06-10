@@ -84,18 +84,24 @@ function Get-WEFSubscription {
     }
 
     Process {
-        # work arround for wrong parameter pipeline parsing. Don't know why this occours.
-        #if ($PsCmdlet.ParameterSetName -eq "RemotingWithSession") { if ($Name -eq $Session.Name) { $Name = "" } }
-
         # creating session when remoting is used and a session isn't already available
         if ( $PsCmdlet.ParameterSetName -eq "RemotingWithComputerName" ) {
             Write-Verbose "Use $($PsCmdlet.ParameterSetName). Creating session to '$($ComputerName)'"
             $Local:Parameter = @{
-                ComputerName = $ComputerName
-                Name         = "WEFSession"
+                ComputerName  = $ComputerName
+                Name          = "WEFSession"
+                ErrorAction   = "Stop"
+                ErrorVariable = "SessionError"
             }
             if ($Credential) { $Parameter.Add("Credential", $Credential) }
-            $Session = New-PSSession @Parameter
+            try {
+                $Session = New-PSSession @Parameter
+            } catch {
+                $SessionError
+                continue
+                Write-Verbose "continue" -Verbose
+                break
+            }
             Write-Debug "Session '$($Session.Name)' to $($Session.ComputerName) created."
             Remove-Variable -Name Parameter -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
         }
@@ -122,7 +128,7 @@ function Get-WEFSubscription {
             Write-Verbose "Found $($SubscriptionEnumeration.count) subscription(s) on local sytem"
         }
 
-        # if parameter name is not specified - 
+        # If parameter name is not specified - query all available subscrptions
         if (-not $Name) { 
             Write-Verbose "No name specified. Query all available subscriptions"
             [array]$Name = $SubscriptionEnumeration 
@@ -130,6 +136,7 @@ function Get-WEFSubscription {
 
         # Looping through every name from parameter, or every subscription found in the system (if parameter was not specified)
         foreach ($NameItem in $Name) { 
+            # Filtering out the subscriptions to query
             if($SubscriptionEnumeration.count -gt 1) {
                 $SubscriptionItemsToQuery = $SubscriptionEnumeration -like $NameItem
             } else {
@@ -137,6 +144,8 @@ function Get-WEFSubscription {
                     [array]$SubscriptionItemsToQuery = $SubscriptionEnumeration
                 }
             }
+            
+            # Query subscription infos if there is a matchin g subscription in the list
             if ($SubscriptionItemsToQuery) {
                 $Subscriptions = @()
                 foreach ($SubscriptionItemToQuery in $SubscriptionItemsToQuery) {
@@ -160,59 +169,23 @@ function Get-WEFSubscription {
                 foreach ($Subscription in $Subscriptions) { 
                     Write-Debug "Working on subscription $($Subscription.Subscription.SubscriptionId)"
                     
-                    # The list of non domain targets for subscription
-                    if ( $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) { 
-                        $AllowedSourceNonDomainComputers = New-Object -TypeName psobject -Property ([ordered]@{
-                                AllowedSubjectList  = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) }})
-                                AllowedIssuerCAList = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) }})
-                                DeniedSubjectList   = (.{if($Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) { [String]::Join(', ', $Subscription.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) }})
-                            })
-                    } else { 
-                        [System.String]$AllowedSourceNonDomainComputers = ""
-                    }
-
-                    # The list of domain targets for subscription
-                    if ( $Subscription.Subscription.AllowedSourceDomainComputers ) { 
-                        $SDDLObject = $Subscription.Subscription.AllowedSourceDomainComputers | ConvertFrom-SddlString
-                        $AllowedSourceDomainComputers = $SDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
-                    } else { 
-                        [System.String]$AllowedSourceDomainComputers = "" 
-                    }
-
                     # Compiling the output object
                     $SubscriptionObjectProperties = [ordered]@{
                         BaseObject                             = $Subscription
                         PSSession                              = $Session
-                        #SubscriptionID                         = [System.String]$Subscription.Subscription.SubscriptionId
-                        #SubscriptionType                       = [System.String]$Subscription.Subscription.SubscriptionType
-                        #Description                            = [System.String]$Subscription.Subscription.Description
-                        #Enabled                                = [bool]::Parse($Subscription.Subscription.Enabled)
-                        #DeliveryMode                           = [System.String]$Subscription.Subscription.Delivery.Mode
-                        #MaxItems                               = [System.Int32]$Subscription.Subscription.Delivery.Batching.MaxItems
-                        #MaxLatencyTime                         = [System.UInt64]$Subscription.Subscription.Delivery.Batching.MaxLatencyTime
-                        #HeartBeatIntervalTime                  = [System.UInt64]$Subscription.Subscription.Delivery.PushSettings.Heartbeat.Interval
-                        #ReadExistingEvents                     = [bool]::Parse($Subscription.Subscription.ReadExistingEvents)
-                        #TransportName                          = [System.String]$Subscription.Subscription.TransportName
-                        #ContentFormat                          = [System.String]$Subscription.Subscription.ContentFormat
-                        #Locale                                 = [System.String]$Subscription.Subscription.Locale.Language
-                        #LogFile                                = [System.String]$Subscription.Subscription.LogFile
-                        #CredentialsType                        = [System.String]$Subscription.Subscription.CredentialsType
-                        AllowedSourceNonDomainComputers        = $AllowedSourceNonDomainComputers
-                        AllowedSourceDomainComputers           = $AllowedSourceDomainComputers
-                        #Query                                  = [String]::Join("`n", ($Subscription.Subscription.Query.'#cdata-section').Trim() )
-                        #PublisherName                          = [System.String]$Subscription.Subscription.PublisherName
-                        #AllowedSourceDomainComputersSDDLString = $Subscription.Subscription.AllowedSourceDomainComputers
-                        AllowedSourceDomainComputersSDDLObject = $SDDLObject
-                        #PSComputerName                         = if($Session) { $Session.ComputerName.ToUpper() }
                     }
                     $Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
+
+                    # Add typnames to the output object. this adds all the script properties to the output object,
                     $Output.pstypenames.Insert(0, $BaseType)
                     $Output.pstypenames.Insert(0, $TypeName)
                     $Output.pstypenames.Insert(0, "$($TypeName).$($Subscription.Subscription.SubscriptionType)")
+
+                    #write the object to the pipeline
                     Write-Output -InputObject $Output
 
                     # Clearing up the mess of variables
-                    Remove-Variable -Name AllowedSourceNonDomainComputers, AllowedSourceDomainComputers, SDDLObject -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+                    Remove-Variable -Name SubscriptionObjectProperties -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
                 }
             }
         }

@@ -121,6 +121,38 @@
             </GetScriptBlock>
         </ScriptProperty>
 
+        <ScriptProperty>
+            <Name>AllowedSourceDomainComputersSDDLObject</Name>
+            <GetScriptBlock>
+                $this.AllowedSourceDomainComputersSDDLString | ConvertFrom-SddlString
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>AllowedSourceDomainComputers</Name>
+            <GetScriptBlock>
+                if ($this.AllowedSourceDomainComputersSDDLString) {
+                    $this.AllowedSourceDomainComputersSDDLObject.DiscretionaryAcl | ForEach-Object { $_.split(':')[0] }
+                } else { 
+                    [System.String]"" 
+                }
+            </GetScriptBlock>
+        </ScriptProperty>
+
+        <ScriptProperty>
+            <Name>AllowedSourceNonDomainComputers</Name>
+            <GetScriptBlock>
+                if ( $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList -or $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList ) {
+                    New-Object -TypeName System.Management.Automation.PSCustomObject -Property ([ordered]@{
+                        AllowedSubjectList  = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.Subject) }})
+                        AllowedIssuerCAList = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.IssuerCA) }})
+                        DeniedSubjectList   = (.{if($this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) { [String]::Join(', ', $this.BaseObject.Subscription.AllowedSourceNonDomainComputers.DeniedSubjectList.Subject) }})
+                    })
+                } else {
+                    [System.String]""
+                }
+            </GetScriptBlock>
+        </ScriptProperty>
 
 
         <AliasProperty>
