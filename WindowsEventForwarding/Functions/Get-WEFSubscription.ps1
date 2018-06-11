@@ -91,7 +91,6 @@ function Get-WEFSubscription {
         [Parameter(Mandatory = $false,
             ValueFromPipeline = $false,
             ValueFromPipelineByPropertyName = $false)]
-        #[ValidateSet("Enable", "Disabled", "Everything")]
         [ValidateSet($true, $false)]
         [String]$Enabled,
 
