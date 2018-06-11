@@ -203,8 +203,8 @@ function Get-WEFSubscription {
                         $Output = $true
                         if($Output -and $Type) { if($Type -eq $result.Subscription.SubscriptionType) { $Output = $true } else { $Output = $false } }
                         if($Output -and $Enabled) { if($FilterEnabled -eq [bool]::Parse($result.Subscription.Enabled)) { $Output = $true } else { $Output = $false } }
-                        if($Output -and $ReadExistingEvents ) { if($FilterExistingEvents -eq [bool]::Parse($result.Subscription.ReadExistingEvents)) { $Output = $true } else { $Output = $false } }
-                        if($Output -and $ContentFormat ) { if($ContentFormat -eq $result.Subscription.ContentFormat) { $Output = $true } else { $Output = $false } }
+                        if($Output -and $ReadExistingEvents) { if($FilterExistingEvents -eq [bool]::Parse($result.Subscription.ReadExistingEvents)) { $Output = $true } else { $Output = $false } }
+                        if($Output -and $ContentFormat) { if($ContentFormat -eq $result.Subscription.ContentFormat) { $Output = $true } else { $Output = $false } }
 
                         # Output if filtering is okay
                         if($Output) { $result }
