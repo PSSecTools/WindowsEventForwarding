@@ -1,47 +1,16 @@
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
 
-# Folder config file
-Desktop.ini
+# ignore the settings folder and files for VSCode and PSS
+.vscode/*
+*.psproj
+*TempPoint*
 
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
+# Ignore staging info from Visual Studio
+library/WindowsEventForwarding/.vs/*
+library/WindowsEventForwarding/WindowsEventForwarding/bin/*
+library/WindowsEventForwarding/WindowsEventForwarding/obj/*
 
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
-
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
+# ignore PowerShell Studio MetaData
+WindowsEventForwarding/WindowsEventForwarding.psproj
+WindowsEventForwarding/WindowsEventForwarding.psproj.bak
+WindowsEventForwarding/WindowsEventForwarding.psprojs
+WindowsEventForwarding/WindowsEventForwarding.psproj
