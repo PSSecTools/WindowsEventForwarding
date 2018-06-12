@@ -17,102 +17,70 @@ function Set-WEFSubscription {
         Example text 
 
     #>
-    [CmdletBinding( DefaultParameterSetName = 'DefaultParameterSet',
+    [CmdletBinding( DefaultParameterSetName = 'Name',
         SupportsShouldProcess = $true,
         PositionalBinding = $true,
         ConfirmImpact = 'medium')]
     Param(
-        # Remote computer name. (PSRemoting required)
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerName',
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
+        [Parameter(ParameterSetName = "InputObject",
+            Mandatory=$true,
+            ValueFromPipeline = $true)]
+        [WEF.Subscription]
+        $InputObject,
+
+        [Parameter(ParameterSetName = "Name",
+            ValueFromPipeline = $true)]
         [Alias("host", "hostname", "Computer", "DNSHostName")]
-        [String[]]$ComputerName = $env:COMPUTERNAME,
-
-        # For usage with existing PSRemoting session
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithSession',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $false)]
-        [Alias()]
-        [System.Management.Automation.Runspaces.PSSession]$Session,
-
-        # The name of the subscription
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'DefaultParameterSet',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            Position = 0)]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerName',
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $false,
-            Position = 0)]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithSession',
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false,
-            Position = 0)]
+        [PSFComputer[]]
+        $ComputerName = $env:COMPUTERNAME,
+		
+        [Parameter(ParameterSetName = "Session")]
+        [System.Management.Automation.Runspaces.PSSession[]]
+        $Session,
+		
+        [Parameter(ValueFromPipeline = $true, Position = 0)]
         [Alias("DisplayName", "SubscriptionID")]
-        [String[]]$Name,
+        [String[]]
+        $Name,
         
-        # Set the state of a subscription
-        [Parameter(Mandatory = $false,
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
-        [bool]$Enabled,
+        [String]
+        $Enabled,
 
-        # Specifies that existing events before the subscription was applied are also transfered to the WEF server  
-        [Parameter(Mandatory = $false,
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
-        [bool]$ReadExistingEvents,
+        [bool]
+        $ReadExistingEvents,
 
-        # Set content format for a subscription
-        [Parameter(Mandatory = $false,
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
-        [ValidateSet("Events", "RenderedText")] 
-        [string]$ContentFormat,
+        [ValidateSet("Events", "RenderedText")]
+        [string]
+        $ContentFormat,
 
-        # Credentials for remote computer (PSRemoting required)
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'RemotingWithComputerName',
-            ValueFromPipeline = $false,
-            ValueFromPipelineByPropertyName = $false)]
-        [Alias()]
-        [pscredential]$Credential
+        [PSCredential]
+        $Credential
     )
 
     Begin {
         $Local:TypeName = "$($BaseType).Subscription"
+        if ($Session) { $ComputerName = $Session }
     }
 
     Process {
-        Write-Verbose "Parameterset: $($PsCmdlet.ParameterSetName)"
-        foreach ($ComputerNameItem in $ComputerName) {
-            # creating session when remoting is used and a session isn't already available
-            if ( $PsCmdlet.ParameterSetName -eq "RemotingWithComputerName" ) {
-                Write-Verbose "Use $($PsCmdlet.ParameterSetName). Creating session to '$($ComputerNameItem)'"
-                $Local:Parameter = @{
-                    ComputerName  = $ComputerNameItem
-                    Name          = "WEFSession"
-                    ErrorAction   = "Stop"
-                    ErrorVariable = "SessionError"
-                }
-                if ($Credential) { $Parameter.Add("Credential", $Credential) }
-                try {
-                    $Session = New-PSSession @Parameter
-                }
-                catch {
-                    $SessionError | Write-Error 
-                    continue
-                }
-                Write-Debug "Session '$($Session.Name)' to $($Session.ComputerName) created."
-                Remove-Variable -Name Parameter -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-            }
+        Write-PSFMessage -Level Verbose -Message "Parameterset: $($PsCmdlet.ParameterSetName)"
+        if($PsCmdlet.ParameterSetName -like "InputObject") {
+            # ???? -> continue
+        }
 
+        foreach ($ComputerNameItem in $ComputerName) {
+            #region Connecting and gathering prerequisites
+            Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
+
+            # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
+            Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
+            $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
+            
+            if ($service.Status -ne 'Running') {
+                throw "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
+            }
+            
+            
         }
     }
 

@@ -67,7 +67,8 @@ function Get-WEFSubscription {
 	.LINK
 		https://github.com/AndiBellstedt/WindowsEventForwarding
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Name')]
+    [CmdletBinding(DefaultParameterSetName = 'Name', 
+        ConfirmImpact = 'low')]
     Param (
         [Parameter(ValueFromPipeline = $true, ParameterSetName = "Name")]
         [Alias("host", "hostname", "Computer", "DNSHostName")]
@@ -133,8 +134,7 @@ function Get-WEFSubscription {
             Write-PSFMessage -Level Debug -Message "Enumerating subscriptions on $($computer)" -Target $computer
             $subscriptionEnumeration = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" } -ErrorAction Stop
             Write-PSFMessage -Level Verbose -Message "Found $($subscriptionEnumeration.count) subscription(s) on $($computer)" -Target $computer
-			
-			
+						
             # If parameter name is not specified - query all available subscrptions
             if (-not $Name) {
                 $listAll = $true
