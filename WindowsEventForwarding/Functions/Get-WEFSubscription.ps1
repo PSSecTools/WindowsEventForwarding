@@ -68,12 +68,16 @@ function Get-WEFSubscription
 	.LINK
 		https://github.com/AndiBellstedt/WindowsEventForwarding
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Name')]
 	Param (
-		[Parameter(ValueFromPipeline = $true)]
-		[Alias("host", "session", "hostname", "Computer", "DNSHostName")]
+		[Parameter(ValueFromPipeline = $true, ParameterSetName = "Name")]
+		[Alias("host", "hostname", "Computer", "DNSHostName")]
 		[PSFComputer[]]
 		$ComputerName = $env:COMPUTERNAME,
+		
+		[Parameter(ParameterSetName = "Session")]
+		[System.Management.Automation.Runspaces.PSSession[]]
+		$Session,
 		
 		[Parameter(ValueFromPipeline = $true, Position = 0)]
 		[Alias("DisplayName", "SubscriptionID")]
@@ -105,6 +109,9 @@ function Get-WEFSubscription
 		$typeName = "$($script:BaseType).Subscription"
 		if ($Enabled) { [bool]$filterEnabled = [bool]::Parse($Enabled) }
 		if ($ReadExistingEvents) { [bool]$filterExistingEvents = [bool]::Parse($ReadExistingEvents) }
+		$listAll = $false
+		
+		if ($Session) { $ComputerName = $Session }
 	}
 	
 	Process
@@ -133,6 +140,7 @@ function Get-WEFSubscription
 			# If parameter name is not specified - query all available subscrptions
 			if (-not $Name)
 			{
+				$listAll = $true
 				Write-PSFMessage -Level Debug -Message "No name specified. Query all available subscriptions"
 				[array]$Name = $subscriptionEnumeration
 			}
@@ -142,7 +150,7 @@ function Get-WEFSubscription
 			foreach ($nameItem in $Name)
 			{
 				# Filtering out the subscriptions to query
-				$subscriptionItemsToQuery = $subscriptionEnumeration -like $nameItem
+				$subscriptionItemsToQuery = $subscriptionEnumeration | Where-Object { $_ -like $nameItem }
 				
 				# Query subscription infos if there is a matching subscription in the list
 				if ($subscriptionItemsToQuery)
@@ -164,33 +172,32 @@ function Get-WEFSubscription
 						# Clean up the mess
 						Clear-Variable -Name result -Force -Confirm:$false -Verbose:$false
 					}
-					
 				}
 				
 				# Transforming xml infos to powershell objects
-				if (-not $subscriptions)
+				if (-not $subscriptions -and -not $listAll)
 				{
 					Write-PSFMessage -Level Verbose -Message "Subscription '$($nameItem)' not found on $($computer) or filtered out." -Target $computer
 					continue
 				}
-				foreach ($Subscription in $subscriptions)
+				foreach ($subscription in $subscriptions)
 				{
-					Write-PSFMessage -Level Debug -Message "Processing subscription $($Subscription.Subscription.SubscriptionId)" -Target $computer
+					Write-PSFMessage -Level Debug -Message "Processing subscription $($subscription.Subscription.SubscriptionId)" -Target $computer
 					
 					# Compiling the output object
-					$SubscriptionObjectProperties = [ordered]@{
-						BaseObject							    = $Subscription
+					$subscriptionObjectProperties = [ordered]@{
+						BaseObject							    = $subscription
 						PSSession							    = $Session
 					}
-					$Output = New-Object -TypeName psobject -Property $SubscriptionObjectProperties
+					$output = New-Object -TypeName psobject -Property $subscriptionObjectProperties
 					
 					# Add typnames to the output object. this adds all the script properties to the output object,
-					$Output.pstypenames.Insert(0, $BaseType)
-					$Output.pstypenames.Insert(0, $typeName)
-					$Output.pstypenames.Insert(0, "$($typeName).$($Subscription.Subscription.SubscriptionType)")
+					$output.pstypenames.Insert(0, $BaseType)
+					$output.pstypenames.Insert(0, $typeName)
+					$output.pstypenames.Insert(0, "$($typeName).$($subscription.Subscription.SubscriptionType)")
 					
 					# write the object to the pipeline
-					$Output
+					$output
 				}
 			}
 			#endregion Processing Events

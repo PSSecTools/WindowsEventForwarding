@@ -71,7 +71,7 @@ All cmdlets are build with
 	# Functions to export from this module
 	FunctionsToExport  = @(
 		'Get-WEFSubscription',
-		'Get-WEFSubscription'
+		'Set-WEFSubscription'
 	)
 	
 	# Cmdlets to export from this module
