@@ -1,34 +1,55 @@
-﻿#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# Modul "WindowsEventForwarding"
-# Author:  Andreas Bellstedt
+$script:ModuleRoot = $PSScriptRoot
+$script:ModuleVersion = "0.2.0.0"
+$script:BaseType = "WEV"
 
-#region type defintion
-#---------------------
+function Import-ModuleFile
+{
+	<#
+		.SYNOPSIS
+			Loads files into the module on module import.
+		
+		.DESCRIPTION
+			This helper function is used during module initialization.
+			It should always be dotsourced itself, in order to proper function.
+			
+			This provides a central location to react to files being imported, if later desired
+		
+		.PARAMETER Path
+			The path to the file to load
+		
+		.EXAMPLE
+			PS C:\> . Import-ModuleFile -File $function.FullName
+	
+			Imports the file stored in $function according to import policy
+	#>
+	[CmdletBinding()]
+	Param (
+		[string]
+		$Path
+	)
+	
+	if ($doDotSource) { . $Path }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null) }
+}
 
-#endregion type defintion
+# Detect whether at some level dotsourcing was enforced
+$script:doDotSource = Get-PSFConfigValue -FullName WindowsEventForwarding.Import.DoDotSource -Fallback $false
+if ($WindowsEventForwarding_dotsourcemodule) { $script:doDotSource = $true }
 
+# Execute Preimport actions
+. Import-ModuleFile -Path "$ModuleRoot\internal\scripts\preimport.ps1"
 
-#region Constants
-#--------------------------
-New-Variable -Option ReadOnly, Constant -Scope Script -Name BaseType -Value "WEF"
+# Import all internal functions
+foreach ($function in (Get-ChildItem "$ModuleRoot\internal\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore))
+{
+	. Import-ModuleFile -Path $function.FullName
+}
 
-#endregion
+# Import all public functions
+foreach ($function in (Get-ChildItem "$ModuleRoot\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore))
+{
+	. Import-ModuleFile -Path $function.FullName
+}
 
-
-#region basic functions
-#----------------------
-. $psscriptroot\Functions\Get-WEFSubscription.ps1
-
-#endregion
-
-
-#region Helper functions
-#-----------------------
-
-#endregion
+# Execute Postimport actions
+. Import-ModuleFile -Path "$ModuleRoot\internal\scripts\postimport.ps1"
