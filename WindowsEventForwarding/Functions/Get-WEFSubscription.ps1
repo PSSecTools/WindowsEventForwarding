@@ -53,7 +53,15 @@ function Get-WEFSubscription {
 	.EXAMPLE
 		PS C:\> "MySubscription" | Get-WEFSubscription -ComputerName Server01
 		
-		Display one or more subscription from one or more remote server.
+        Display the subscription "MySubscription" from the remote server "Server01".
+        Arrays can be piped in or specified as ComputerName ether.
+	
+	.EXAMPLE
+		PS C:\> "Server01" | Get-WEFSubscription -Name "MySubscription"
+		
+        Display the subscription "MySubscription" from the remote server "Server01".
+        Arrays can be piped in or specified as ComputerName ether.
+        Please notice, that this is a differnt parmeter set from the previous example.
 	
 	.EXAMPLE
 		PS C:\> $Session | Get-WEFSubscription "MySubscription*"
@@ -69,21 +77,23 @@ function Get-WEFSubscription {
 #>
     [CmdletBinding(DefaultParameterSetName = 'Name', 
         ConfirmImpact = 'low')]
-    Param (
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = "Name")]
+    Param(
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Name")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "ComputerName")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "Session")]
+        [Alias("DisplayName", "SubscriptionID", "Idendity")]
+        [String[]]
+        $Name,
+
+        [Parameter(ValueFromPipeline = $true, Position = 1, ParameterSetName = "ComputerName")]
         [Alias("host", "hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 		
-        [Parameter(ParameterSetName = "Session")]
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = "Session")]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
-		
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
-        [Alias("DisplayName", "SubscriptionID")]
-        [String[]]
-        $Name,
-		
+				
         [ValidateSet("SourceInitiated", "CollectorInitiated")]
         [string]
         $Type,
@@ -109,15 +119,15 @@ function Get-WEFSubscription {
         if ($Enabled) { [bool]$filterEnabled = [bool]::Parse($Enabled) }
         if ($ReadExistingEvents) { [bool]$filterExistingEvents = [bool]::Parse($ReadExistingEvents) }
         $listAll = $false
-		
-        if ($Session) { $ComputerName = $Session }
     }
 	
     Process {
-		# Workarroud parameter "Name", when Computername was piped into the function
-		#? ($PsCmdlet.ParameterSetName -eq "Name")
-		if ($Name -eq $ComputerName.ComputerName) { $Name = "" }
-		
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+        # when Session parameter is used, or a session object is piped in, transfer it to ComputerName,
+        # because of the class "PSFComputer" from PSFramework can handle it. This simplifies the handling
+        # in the further process block 
+        if($PsCmdlet.ParameterSetName -eq "Session") { $ComputerName = $Session }
+        
         foreach ($computer in $ComputerName) {
             #region Connecting and gathering prerequisites
             Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
@@ -125,7 +135,6 @@ function Get-WEFSubscription {
             # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
             Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
             $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
-			
             if ($service.Status -ne 'Running') {
                 throw "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
             }

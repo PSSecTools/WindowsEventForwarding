@@ -19,29 +19,31 @@ function Set-WEFSubscription {
     #>
     [CmdletBinding( DefaultParameterSetName = 'Name',
         SupportsShouldProcess = $true,
-        PositionalBinding = $true,
         ConfirmImpact = 'medium')]
     Param(
-        [Parameter(ParameterSetName = "InputObject",
-            Mandatory=$true,
-            ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject", Mandatory=$true)]
         [WEF.Subscription]
         $InputObject,
 
-        [Parameter(ParameterSetName = "Name",
-            ValueFromPipeline = $true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Name", Mandatory=$true)]
+        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "ComputerName", Mandatory=$true)]
+        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "Session", Mandatory=$true)]
+        [Alias("DisplayName", "SubscriptionID", "Idendity")]
+        [String]
+        $Name,
+
+        [Parameter(ValueFromPipeline = $true, Position = 1, ParameterSetName = "ComputerName")]
         [Alias("host", "hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 		
-        [Parameter(ParameterSetName = "Session")]
+        [Parameter(ValueFromPipeline = $true, ParameterSetName = "Session")]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
-		
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
-        [Alias("DisplayName", "SubscriptionID")]
-        [String[]]
-        $Name,
+
+        [String]
+        $NewName,
+
         
         [String]
         $Enabled,
@@ -59,13 +61,23 @@ function Set-WEFSubscription {
 
     Begin {
         $Local:TypeName = "$($BaseType).Subscription"
-        if ($Session) { $ComputerName = $Session }
     }
 
     Process {
-        Write-PSFMessage -Level Verbose -Message "Parameterset: $($PsCmdlet.ParameterSetName)"
-        if($PsCmdlet.ParameterSetName -like "InputObject") {
-            # ???? -> continue
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+
+        # When Session parameter is used, or a session object is piped in, transfer it to ComputerName,
+        # because of the class "PSFComputer" from PSFramework can handle it. This simplifies the handling
+        # in the further process block 
+        if($PsCmdlet.ParameterSetName -eq "Session") { $ComputerName = $Session }
+        
+        # Checking Parameterset - when not inputobject query for existiing object to modiy 
+        if($PsCmdlet.ParameterSetName -ne "InputObject") {
+            $getParms = @{
+                Name = $Name
+            }
+            # Conitinue HERE
+            $InputObject = Get-WEFSubscriptiont @getParms
         }
 
         foreach ($ComputerNameItem in $ComputerName) {
