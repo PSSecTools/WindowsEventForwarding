@@ -17,17 +17,15 @@ function Set-WEFSubscription {
         Example text 
 
     #>
-    [CmdletBinding( DefaultParameterSetName = 'Name',
+    [CmdletBinding( DefaultParameterSetName = 'ComputerName',
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject", Mandatory=$true)]
-        [WEF.Subscription]
+        #[System.Management.Automation.PSCustomObject]
         $InputObject,
 
-        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Name", Mandatory=$true)]
-        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "ComputerName", Mandatory=$true)]
-        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "Session", Mandatory=$true)]
+        [Parameter(ValueFromPipeline = $true, Position = 0)]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
         [String]
         $Name,
@@ -37,15 +35,21 @@ function Set-WEFSubscription {
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
 		
-        [Parameter(ValueFromPipeline = $true, ParameterSetName = "Session")]
+        [Parameter(ParameterSetName = "Session")]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
+
+        [PSCredential]
+        $Credential,
+
 
         [String]
         $NewName,
 
+        [string]
+        $Description,
         
-        [String]
+        [bool]
         $Enabled,
 
         [bool]
@@ -55,44 +59,80 @@ function Set-WEFSubscription {
         [string]
         $ContentFormat,
 
-        [PSCredential]
-        $Credential
+        [string]
+        $LogFile,
+
+        [ValidateSet("en-US", "de-DE", "fr-FR", "es-ES", "nl-NL","it-IT")]
+        [string]
+        $Locale,
+
+        [string]
+        $Query,
+
+        [timespan]
+        $MaxLatency,
+
+        [timespan]
+        $HeartBeatInterval,
+        
+        [int]
+        $MaxItems,
+
+        [ValidateSet("HTTP", "HTTPS")]
+        [string]
+        $TransportName
     )
 
     Begin {
         $Local:TypeName = "$($BaseType).Subscription"
+
+        # If session parameter is used -> transfer it to ComputerName,
+        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
+        if ($Session) { $ComputerName = $Session }
+
+        $nameBound = Test-PSFParameterBinding -ParameterName Name
+        $computerBound = Test-PSFParameterBinding -ParameterName ComputerName
     }
 
     Process {
-        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+        Write-PSFMessage -Level Verbose -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
-        # When Session parameter is used, or a session object is piped in, transfer it to ComputerName,
-        # because of the class "PSFComputer" from PSFramework can handle it. This simplifies the handling
-        # in the further process block 
-        if($PsCmdlet.ParameterSetName -eq "Session") { $ComputerName = $Session }
+        # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
+        if (-not ($nameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
+            if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Name = "" }
+        }
         
         # Checking Parameterset - when not inputobject query for existiing object to modiy 
         if($PsCmdlet.ParameterSetName -ne "InputObject") {
-            $getParms = @{
-                Name = $Name
+            Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
+            $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
+            if (-not $InputObject) {
+                $message = "Subscription $Name not found"
+                if($ComputerName) { $message = $message + " on " + $ComputerName }
+                throw $message 
             }
-            # Conitinue HERE
-            $InputObject = Get-WEFSubscriptiont @getParms
         }
 
-        foreach ($ComputerNameItem in $ComputerName) {
+        foreach ($subscription in $InputObject) {
             #region Connecting and gathering prerequisites
-            Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
+            Write-PSFMessage -Level Verbose -Message "Processing $($subscription.Name) on $($subscription.ComputerName)" -Target $subscription.ComputerName
+            
+            switch ($PSBoundParameters.Keys) {
+                "NewName" { "NewName" }
+                "Description" {}
+                "Enabled" { "Enabled" }
+                "ReadExistingEvents" { $ReadExistingEvents }
+                "ContentFormat" { $ContentFormat }
+                "LogFile" {}
+                "Locale" {}
+                "Query" {}
+                "MaxLatency" {}
+                "HeartBeatInterval" {}
+                "MaxItems" {}
+                "TransportName" {}
 
-            # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
-            Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
-            $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
-            
-            if ($service.Status -ne 'Running') {
-                throw "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
+                Default {}
             }
-            
-            
         }
     }
 
