@@ -1,6 +1,6 @@
-$script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = "0.2.0.0"
-$script:BaseType = "WEV"
+New-Variable -Option ReadOnly, Constant -Scope Script -Name ModuleRoot -Value $PSScriptRoot
+New-Variable -Option ReadOnly, Constant -Scope Script -Name ModuleVersion -Value "0.2.0.0"
+New-Variable -Option ReadOnly, Constant -Scope Script -Name BaseType -Value "WEF"
 
 function Import-ModuleFile
 {
