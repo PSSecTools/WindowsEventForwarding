@@ -25,7 +25,9 @@ function Set-WEFSubscription {
         #[System.Management.Automation.PSCustomObject]
         $InputObject,
 
-        [Parameter(ValueFromPipeline = $true, Position = 0)]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Session")]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Name")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "ComputerName")]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
         [String]
         $Name,
@@ -42,10 +44,11 @@ function Set-WEFSubscription {
         [PSCredential]
         $Credential,
 
-
+        [ValidateNotNullOrEmpty()]
         [String]
         $NewName,
 
+        [ValidateNotNullOrEmpty()]
         [string]
         $Description,
         
@@ -59,6 +62,7 @@ function Set-WEFSubscription {
         [string]
         $ContentFormat,
 
+        [ValidateNotNullOrEmpty()]
         [string]
         $LogFile,
 
@@ -66,26 +70,42 @@ function Set-WEFSubscription {
         [string]
         $Locale,
 
-        [string]
+        [ValidateNotNullOrEmpty()]
+        [string[]]
         $Query,
 
+        [ValidateNotNullOrEmpty()]
         [timespan]
         $MaxLatency,
 
+        [ValidateNotNullOrEmpty()]
         [timespan]
         $HeartBeatInterval,
         
+        [ValidateNotNullOrEmpty()]
         [int]
         $MaxItems,
 
         [ValidateSet("HTTP", "HTTPS")]
         [string]
-        $TransportName
+        $TransportName,
+
+        [ValidateNotNullOrEmpty()]
+        [String[]]
+        $SourceDomainComputer,
+
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $SourceNonDomainDNSList,
+
+        [string[]]
+        $SourceNonDomainIssuerCAThumbprint,
+
+        [ValidateNotNullOrEmpty()]
+        [datetime]
+        $Expires
     )
-
     Begin {
-        $Local:TypeName = "$($BaseType).Subscription"
-
         # If session parameter is used -> transfer it to ComputerName,
         # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
         if ($Session) { $ComputerName = $Session }
@@ -117,21 +137,130 @@ function Set-WEFSubscription {
             #region Connecting and gathering prerequisites
             Write-PSFMessage -Level Verbose -Message "Processing $($subscription.Name) on $($subscription.ComputerName)" -Target $subscription.ComputerName
             
-            switch ($PSBoundParameters.Keys) {
-                "NewName" { "NewName" }
-                "Description" {}
-                "Enabled" { "Enabled" }
-                "ReadExistingEvents" { $ReadExistingEvents }
-                "ContentFormat" { $ContentFormat }
-                "LogFile" {}
-                "Locale" {}
-                "Query" {}
-                "MaxLatency" {}
-                "HeartBeatInterval" {}
-                "MaxItems" {}
-                "TransportName" {}
+            # keep original name to identify existing subscription later 
+            $subscriptionNameOld = $subscription.Name
 
-                Default {}
+            # Change properties depending on given parameters
+            
+            $propertyNameChangeList = @()
+            switch ($PSBoundParameters.Keys) {
+                "NewName" { 
+                    $propertyNameChangeList += "NewName"
+                    $subscription.BaseObject.Subscription.SubscriptionId = $NewName #+((get-date -Format s).ToString().Replace(":","").Replace(".",""))  # for testing
+                }
+                "Description" {
+                    $propertyNameChangeList += "Description"
+                    $subscription.BaseObject.Subscription.Description = $Description 
+                }
+                "Enabled" {
+                    $propertyNameChangeList += "Enabled"
+                    $subscription.BaseObject.Subscription.Enabled = $Enabled.ToString() 
+                }
+                "ReadExistingEvents" {
+                    $propertyNameChangeList += "ReadExistingEvents"
+                    $subscription.BaseObject.Subscription.ReadExistingEvents = $ReadExistingEvents.ToString() 
+                }
+                "ContentFormat" {
+                    $propertyNameChangeList += "ContentFormat"
+                    $subscription.BaseObject.Subscription.ContentFormat = $ContentFormat 
+                }
+                "LogFile" {
+                    $propertyNameChangeList += "LogFile"
+                    $subscription.BaseObject.Subscription.LogFile = $LogFile 
+                }
+                "Locale" { 
+                    $propertyNameChangeList += ""
+                    $subscription.BaseObject.Subscription.Locale.Language = $Locale
+                }
+                "Query" {
+                    $propertyNameChangeList += "Query"
+                    # Build the XML string to insert the query
+                    $queryString = "<![CDATA[<QueryList> <Query Id='0'>"
+                    foreach ($queryItem in $Query) {
+                        $queryString += "`n" + $queryItem
+                    }
+                    $queryString += "`n" + "</Query></QueryList>]]>"
+
+                    # Insert the new query in the subscription 
+                    $subscription.BaseObject.Subscription.Query.InnerXml = $queryString
+
+                    # Cleanup the mess
+                    Remove-Variable -Name queryString -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue 
+                }
+                "MaxLatency" {
+                    $propertyNameChangeList += "MaxLatency" 
+                    $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
+                    $subscription.BaseObject.Subscription.Delivery.Batching.MaxLatencyTime = $MaxLatency.TotalMilliseconds.ToString() 
+                }
+                "HeartBeatInterval" {
+                    $propertyNameChangeList += "HeartBeatInterval"
+                    $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
+                    $subscription.BaseObject.Subscription.Delivery.PushSettings.Heartbeat.Interval = $HeartBeatInterval.TotalMilliseconds.ToString() 
+                }
+                "MaxItems" {
+                    $propertyNameChangeList += "MaxItems"
+                    $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
+                    if(-not ($subscription.BaseObject.Subscription.Delivery.Batching.MaxItems| Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml = $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml + '<MaxItems xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></MaxItems>'
+                    }
+                    $subscription.BaseObject.Subscription.Delivery.Batching.MaxItems = $MaxItems.ToString() 
+                }
+                "TransportName" {
+                    $propertyNameChangeList += "TransportName"
+                    $subscription.BaseObject.Subscription.TransportName = $TransportName 
+                }
+                "SourceDomainComputer" {
+                    $propertyNameChangeList += "SourceDomainComputer"
+
+                    # not support yet
+                    Write-PSFMessage -Level Warning -Message "modifying SourceDomainComputer is not support yet"
+                }
+                "SourceNonDomainDNSList" {
+                    $propertyNameChangeList += "SourceNonDomainDNSList"
+
+                    # not support yet
+                    Write-PSFMessage -Level Warning -Message "modifying SourceNonDomainDNSList is not support yet"
+                }
+                "SourceNonDomainIssuerCAThumbprint" {
+                    $propertyNameChangeList += "SourceNonDomainIssuerCAThumbprint"
+
+                    # not support yet
+                    Write-PSFMessage -Level Warning -Message "modifying SourceNonDomainIssuerCAThumbprint is not support yet"
+                }
+                "Expires" {
+                    $propertyNameChangeList += "Expires"
+
+                    
+                    if(-not ($subscription.BaseObject.Subscription.Expires | Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + '<Expires xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></Expires>'
+                    }
+                    $subscription.BaseObject.Subscription.Expires = ($Expires | Get-Date -Format s).ToString()
+                }
+                Default { }
+            }
+
+            if ($pscmdlet.ShouldProcess("Subscription: $subscriptionNameOld", "Set properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)'.")) {
+                Write-PSFMessage -Level Verbose -Message "Set properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)' in subscription $($subscription.Name)" -Target $subscription.ComputerName
+                
+                # Create temp file name 
+                $invokeParams = @{
+                    ComputerName = $subscription.ComputerName
+                    ErrorAction = "Stop"
+                    ArgumentList = @($subscriptionNameOld, $subscription.BaseObject.InnerXml, "WEF.$( [system.guid]::newguid().guid ).xml")
+                }
+                if($Credential) { $invokeParams.Add("Credential", $Credential)}
+                
+                Invoke-PSFCommand @invokeParams -Verbose -ScriptBlock { 
+                    $subscriptionName = $args[0]
+                    $tempFileContent = $args[1]
+                    $tempFileName = $args[2]
+    
+                    Set-Content -Path "$env:TEMP\$tempFileName" -Value $tempFileContent -Force
+                    . "$env:windir\system32\wecutil.exe" "delete-subscription" $subscriptionName 
+                    . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$TempFileName"
+                    Remove-Item -Path "$env:TEMP\$TempFileName" -Force -Confirm:$false
+                } 
+                
             }
         }
     }
