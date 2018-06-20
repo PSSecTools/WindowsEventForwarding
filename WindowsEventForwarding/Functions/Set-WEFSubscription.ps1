@@ -243,31 +243,34 @@ function Set-WEFSubscription {
                 Write-PSFMessage -Level Verbose -Message "Set properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)' in subscription $($subscription.Name)" -Target $subscription.ComputerName
                 
                 $invokeParams = @{
-                    ComputerName = $subscription.ComputerName
-                    ErrorAction = "Stop"
-                    ArgumentList = @($subscriptionNameOld, $subscription.BaseObject.InnerXml, "WEF.$( [system.guid]::newguid().guid ).xml")
+                    ComputerName  = $subscription.ComputerName
+                    ErrorAction   = "Stop"
+                    ErrorVariable = "ErrorReturn"
+                    ArgumentList  = @(
+                        $subscriptionNameOld, 
+                        $subscription.BaseObject.InnerXml, 
+                        "WEF.$( [system.guid]::newguid().guid ).xml"
+                    )
                 }
                 if($Credential) { $invokeParams.Add("Credential", $Credential)}
                 
                 # Create temp file name 
                 Invoke-PSFCommand @invokeParams -ScriptBlock { Set-Content -Path "$env:TEMP\$( $args[2] )" -Value $args[1] -Force -ErrorAction Stop } #tempFileName , xmlcontent 
                 
-                # Delete existing subscription. Has to run with start-process to gather error-channel
-                $result = Invoke-PSFCommand @invokeParams -ErrorVariable ExecError -ScriptBlock { 
-                    Start-Process -FilePath "$env:windir\system32\wecutil.exe" -ArgumentList "delete-subscription $($args[0])" -Wait -NoNewWindow -RedirectStandardError $env:TEMP\$( $args[2] ).delete_error  #subscriptionName
-                    Get-Content -Path "$env:TEMP\$( $args[2] ).delete_error"
-                    Remove-Item -Path "$env:TEMP\$( $args[2] ).delete_error" -Force -Confirm:$false  #Erro redirect file 
-                }
-                if($result) {
-                    # This one should not happen - this will be an unexpected behaviour
-                    throw "Error deleting existing subscription! $($result)"
+                # Delete existing subscription. execute wecutil to delete subscription with redirectoing error output
+                try {
+                    Invoke-PSFCommand @invokeParams -ScriptBlock { . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" 2>&1 } #subscriptionName
+                } catch {
+                    Write-PSFMessage -Level Verbose -Message "this should not happen - this will be an unexpected behaviour" -Target $subscription.ComputerName
+                    #(($weferror[3].Exception.ErrorRecord.Exception.Message -split "`n") | Select-String "error =") -split " = "
+                    throw "Error deleting existing subscription! $($ErrorReturn)"
                 }
 
-                # Recreate changed subscription
-                $result = Invoke-PSFCommand @invokeParams -ErrorVariable ExecError -ScriptBlock { 
-                    Start-Process -FilePath "$env:windir\system32\wecutil.exe" -ArgumentList "create-subscription $env:TEMP\$( $args[2] )" -Wait -NoNewWindow -RedirectStandardError $env:TEMP\$( $args[2] ).create_error  #tempFileName
-                    Get-Content -Path "$env:TEMP\$( $args[2] ).create_error"
-                    Remove-Item -Path "$env:TEMP\$( $args[2] ).create_error" -Force -Confirm:$false  #Erro redirect file 
+                # Recreate changed subscription. execute wecutil to recreate changed subscription with redirectoing error output
+                try {
+                    Invoke-PSFCommand @invokeParams -ScriptBlock { . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[2] )" 2>&1 } #tempFileName 
+                } catch {
+                    throw "Error deleting existing subscription! $($ErrorReturn)"
                 }
 
                 # Cleanup the xml garbage (temp file)
