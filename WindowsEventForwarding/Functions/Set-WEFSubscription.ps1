@@ -21,18 +21,19 @@ function Set-WEFSubscription {
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]
     Param(
-        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject", Mandatory=$true)]
-        #[System.Management.Automation.PSCustomObject]
+        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject")]
+#        [System.Management.Automation.PSCustomObject]
+#        [WEF.Subscription.SourceInitiated]
+#        [WEF.Subscription]
         $InputObject,
 
-        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Session")]
-        [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "Name")]
-        [Parameter(ValueFromPipeline = $false, Position = 0, ParameterSetName = "ComputerName")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "ComputerName")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "Session")]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
         [String]
         $Name,
 
-        [Parameter(ValueFromPipeline = $true, Position = 1, ParameterSetName = "ComputerName")]
+        [Parameter(ValueFromPipeline = $true, Position = 1, Mandatory = $false, ParameterSetName = "ComputerName")]
         [Alias("host", "hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
