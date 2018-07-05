@@ -1,21 +1,111 @@
 function Set-WEFSubscription {
     <#
         .Synopsis
-        Set-WEFSubscription
+            Set-WEFSubscription
 
         .DESCRIPTION
-        Set properties on a Windows Eventlog Forwarding subscription 
+            Set properties on a Windows Eventlog Forwarding subscription 
 
-        .NOTES
-        Author: Andreas Bellstedt
+        .PARAMETER InputObject
+            Pipeline catching object for Get-WEFSubscription
 
-        .LINK
-        https://github.com/AndiBellstedt/WindowsEventForwarding
+        .PARAMETER ComputerName
+            The computer(s) to connect to.
+            Supports PSSession objects, will reuse sessions.
+
+            Available aliases: "host", "hostname", "Computer", "DNSHostName"
+
+        .PARAMETER Session
+            PSSession(s) to connect to.
+
+        .PARAMETER Name
+            Name of the subscription to modify.
+            Only needed when InputObject is not used.
+            Must be specified when piping in a computername or PSSession.
+
+            Available aliases: "DisplayName", "SubscriptionID", "Idendity"
+
+        .PARAMETER Credential
+            The credentials to use on remote calls.
+
+        .PARAMETER NewName
+            The new name for the subscription.
+
+        .PARAMETER Description
+            The discription for a subscription.
+
+        .PARAMETER Enabled
+            Set the status of a subscription.
+
+            Available aliases: "Enable" and "Status" 
+
+        .PARAMETER ReadExistingEvents
+            #ToBeDone#
+            <Boolean>
+
+        .PARAMETER ContentFormat
+            #ToBeDone#
+            <String>
+
+        .PARAMETER LogFile
+            #ToBeDone#
+            <String>
+
+        .PARAMETER Locale
+            #ToBeDone#
+            <String>
+
+        .PARAMETER Query
+            #ToBeDone#
+            <String[]>
+
+        .PARAMETER MaxLatency
+            #ToBeDone#
+            <TimeSpan>
+
+        .PARAMETER HeartBeatInterval
+            #ToBeDone#
+            <TimeSpan>
+
+        .PARAMETER MaxItems
+            #ToBeDone#
+            <Int32>
+
+        .PARAMETER TransportName
+            #ToBeDone#
+            <String>
+
+        .PARAMETER SourceDomainComputer
+            #ToBeDone#
+            <String[]>
+
+        .PARAMETER SourceNonDomainDNSList
+            #ToBeDone#
+            <String[]>
+
+        .PARAMETER SourceNonDomainIssuerCAThumbprint
+            #ToBeDone#
+            <String[]>
+
+        .PARAMETER Expires
+            Specifies a datetime when the subscription expires and computers will be no more active. 
 
         .EXAMPLE
-        Set-WEFSubscription
-        Example text 
+            PS C:\> Set-WEFSubscription -Name "Subscription1" -NewName "Subscription1New"
+            
+            Rename the subscription "Subscription1" to "Subscription1New"
 
+        .EXAMPLE
+            PS C:\> Get-WEFSubscription -Name "Subscription1" | Set-WEFSubscription -Enabled $true
+            
+            Enable "Subscription1" by using the pipeline.
+            Aliases "Enable" and "Status" available for parameter "Enabled". 
+
+        .NOTES
+            Author: Andreas Bellstedt
+
+        .LINK
+            https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
     [CmdletBinding( DefaultParameterSetName = 'ComputerName',
         SupportsShouldProcess = $true,
@@ -30,7 +120,7 @@ function Set-WEFSubscription {
         [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "ComputerName")]
         [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "Session")]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
-        [String]
+        [String[]]
         $Name,
 
         [Parameter(ValueFromPipeline = $true, Position = 1, Mandatory = $false, ParameterSetName = "ComputerName")]
@@ -52,7 +142,8 @@ function Set-WEFSubscription {
         [ValidateNotNullOrEmpty()]
         [string]
         $Description,
-        
+
+        [Alias("Enable", "Status")]
         [bool]
         $Enabled,
 
@@ -113,21 +204,23 @@ function Set-WEFSubscription {
         # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
         if ($Session) { $ComputerName = $Session }
 
-        $nameBound = Test-PSFParameterBinding -ParameterName Name
-        $computerBound = Test-PSFParameterBinding -ParameterName ComputerName
+        #$nameBound = Test-PSFParameterBinding -ParameterName Name
+        #$computerBound = Test-PSFParameterBinding -ParameterName ComputerName
     }
 
     Process {
-        Write-PSFMessage -Level Verbose -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+        Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
-        if (-not ($nameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
-            if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Name = "" }
-        }
-        
-        # Checking Parameterset - when not inputobject query for existiing object to modiy 
+        #if (-not ($nameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
+        #    if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Name = "" }
+        #}
+        #endregion parameterset workarround
+
+        #region query specified subscription when not piped in
         if($PsCmdlet.ParameterSetName -ne "InputObject") {
+            # when not inputobject --> query for existing object to modify 
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
             $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
             if (-not $InputObject) {
@@ -136,7 +229,7 @@ function Set-WEFSubscription {
                 throw $message 
             }
         }
-        #endregion parameterset workarround
+        #endregion query specified subscription when not piped in
 
         foreach ($subscription in $InputObject) {
             Write-PSFMessage -Level Verbose -Message "Processing $($subscription.Name) on $($subscription.ComputerName)" -Target $subscription.ComputerName
