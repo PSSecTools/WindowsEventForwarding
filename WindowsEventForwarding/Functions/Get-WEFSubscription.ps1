@@ -1,80 +1,80 @@
 function Get-WEFSubscription {
     <#
-    .Synopsis
-        Get-WEFSubscription
+        .Synopsis
+            Get-WEFSubscription
 
-    .DESCRIPTION
-        Query Windows Eventlog Forwarding subscriptions.
+        .DESCRIPTION
+            Query Windows Eventlog Forwarding subscriptions.
 
-    .PARAMETER ComputerName
-        The computer(s) to connect to.
-        Supports PSSession objects, will reuse sessions.
+        .PARAMETER ComputerName
+            The computer(s) to connect to.
+            Supports PSSession objects, will reuse sessions.
 
-    .PARAMETER Name
-        Name of the subscription to filter by.
+        .PARAMETER Name
+            Name of the subscription to filter by.
 
-    .PARAMETER Type
-        Filter option for only return objects by specified type
+        .PARAMETER Type
+            Filter option for only return objects by specified type
 
-    .PARAMETER Enabled
-        Filter by whether a subscription is enabled.
+        .PARAMETER Enabled
+            Filter by whether a subscription is enabled.
 
-    .PARAMETER ReadExistingEvents
-        Filter option for only return objects by state of ReadExistingEvents
+        .PARAMETER ReadExistingEvents
+            Filter option for only return objects by state of ReadExistingEvents
 
-    .PARAMETER ContentFormat
-        Filter option for only return objects by specified content format
+        .PARAMETER ContentFormat
+            Filter option for only return objects by specified content format
 
-    .PARAMETER Credential
-        The credentials to use on remote calls.
+        .PARAMETER Credential
+            The credentials to use on remote calls.
 
-    .EXAMPLE
-        PS C:\> Get-WEFSubscription
-        
-        Display all available subscription
+        .EXAMPLE
+            PS C:\> Get-WEFSubscription
+            
+            Display all available subscription
 
-    .EXAMPLE
-        PS C:\> Get-WEFSubscription -Name MySubscription, Subscription2
-        
-        Display Subscriptions by name. Multiple values are supported
+        .EXAMPLE
+            PS C:\> Get-WEFSubscription -Name MySubscription, Subscription2
+            
+            Display Subscriptions by name. Multiple values are supported
 
-    .EXAMPLE
-        PS C:\> Get-WEFSubscription -Enabled $true
-        
-        Display only subscriptions with status "enabled".
-        This can filter down the output.
+        .EXAMPLE
+            PS C:\> Get-WEFSubscription -Enabled $true
+            
+            Display only subscriptions with status "enabled".
+            This can filter down the output.
 
-    .EXAMPLE
-        PS C:\> Get-WEFSubscription -ContentFormat RenderedText
-        
-        Display only subscriptions with contentformat "RenderedText" set.
-        This can filter down the output.
+        .EXAMPLE
+            PS C:\> Get-WEFSubscription -ContentFormat RenderedText
+            
+            Display only subscriptions with contentformat "RenderedText" set.
+            This can filter down the output.
 
-    .EXAMPLE
-        PS C:\> "MySubscription" | Get-WEFSubscription -ComputerName Server01
-        
-        Display the subscription "MySubscription" from the remote server "Server01".
-        Arrays can be piped in or specified as ComputerName ether.
+        .EXAMPLE
+            PS C:\> "MySubscription" | Get-WEFSubscription -ComputerName Server01
+            
+            Display the subscription "MySubscription" from the remote server "Server01".
+            Arrays can be piped in or specified as ComputerName ether.
 
-    .EXAMPLE
-        PS C:\> "Server01" | Get-WEFSubscription -Name "MySubscription"
-        
-        Display the subscription "MySubscription" from the remote server "Server01".
-        Arrays can be piped in or specified as ComputerName ether.
-        Please notice, that this is a differnt parmeter set from the previous example.
+        .EXAMPLE
+            PS C:\> "Server01" | Get-WEFSubscription -Name "MySubscription"
+            
+            Display the subscription "MySubscription" from the remote server "Server01".
+            Arrays can be piped in or specified as ComputerName ether.
+            Please notice, that this is a differnt parmeter set from the previous example.
 
-    .EXAMPLE
-        PS C:\> $Session | Get-WEFSubscription "MySubscription*"
-        
-        Display subscriptions from an existing PSRemoting session.
-        The $session variable has to be declared before. (e.g. $Session = New-PSSession -ComputerName Server01)
+        .EXAMPLE
+            PS C:\> $Session | Get-WEFSubscription "MySubscription*"
+            
+            Display subscriptions from an existing PSRemoting session.
+            The $session variable has to be declared before. (e.g. $Session = New-PSSession -ComputerName Server01)
 
-    .NOTES
-        Author: Andreas Bellstedt
+        .NOTES
+            Author: Andreas Bellstedt
 
-    .LINK
-        https://github.com/AndiBellstedt/WindowsEventForwarding
-#>
+        .LINK
+            https://github.com/AndiBellstedt/WindowsEventForwarding
+    #>
     [CmdletBinding(DefaultParameterSetName = 'ComputerName', 
         ConfirmImpact = 'low')]
     Param(
@@ -128,11 +128,13 @@ function Get-WEFSubscription {
 
     Process {
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
+        #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
         if (-not ($nameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
             if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Name = "" }
         }
-        
+        #endregion parameterset workarround
+
         foreach ($computer in $ComputerName) {
             #region Connecting and gathering prerequisites
             Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
