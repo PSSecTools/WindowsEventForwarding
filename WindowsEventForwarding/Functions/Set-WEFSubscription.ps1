@@ -124,7 +124,7 @@ function Set-WEFSubscription {
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
-    [CmdletBinding( DefaultParameterSetName = 'ComputerName',
+    [CmdletBinding( DefaultParameterSetName = 'InputObject',
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]
     Param(
@@ -459,6 +459,10 @@ function Set-WEFSubscription {
                 }
                 
                 Default { }
+            }
+
+            if($propertyNameChangeList -contains "Locale" -and $subscription.BaseObject.Subscription.ContentFormat -ne "RenderedText") {
+                Write-PSFMessage -Level Important -Message "Property 'Locale' is specified, but 'ContentFormat' is not set to 'RenderedText'. Property setting done, but without effect." -Target $subscription.ComputerName
             }
             #endregion Change properties on subscription depending on given parameters (in memory operations)
 
