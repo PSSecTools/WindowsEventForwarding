@@ -94,10 +94,11 @@ function Set-WEFSubscription {
         [String[]]
         $SourceDomainComputer,
 
-        [ValidateNotNullOrEmpty()]
+        [ValidateNotNull()]
         [string[]]
         $SourceNonDomainDNSList,
 
+        [ValidateNotNull()]
         [string[]]
         $SourceNonDomainIssuerCAThumbprint,
 
@@ -146,34 +147,50 @@ function Set-WEFSubscription {
             switch ($PSBoundParameters.Keys) {
                 "NewName" { 
                     $propertyNameChangeList += "NewName"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'NewName'"
+
                     $subscription.BaseObject.Subscription.SubscriptionId = $NewName #+((get-date -Format s).ToString().Replace(":","").Replace(".",""))  # for testing
                 }
                 "Description" {
                     $propertyNameChangeList += "Description"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'Description'"
+
                     $subscription.BaseObject.Subscription.Description = $Description 
                 }
                 "Enabled" {
                     $propertyNameChangeList += "Enabled"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'Enabled'"
+
                     $subscription.BaseObject.Subscription.Enabled = $Enabled.ToString() 
                 }
                 "ReadExistingEvents" {
                     $propertyNameChangeList += "ReadExistingEvents"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'ReadExistingEvents'"
+
                     $subscription.BaseObject.Subscription.ReadExistingEvents = $ReadExistingEvents.ToString() 
                 }
                 "ContentFormat" {
                     $propertyNameChangeList += "ContentFormat"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'ContentFormat'"
+
                     $subscription.BaseObject.Subscription.ContentFormat = $ContentFormat 
                 }
                 "LogFile" {
                     $propertyNameChangeList += "LogFile"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'LogFile'"
+
                     $subscription.BaseObject.Subscription.LogFile = $LogFile 
                 }
                 "Locale" { 
                     $propertyNameChangeList += "Locale"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'Locale'"
+
                     $subscription.BaseObject.Subscription.Locale.Language = $Locale
                 }
                 "Query" {
                     $propertyNameChangeList += "Query"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'Query'"
+
                     # Build the XML string to insert the query
                     $queryString = "<![CDATA[<QueryList> <Query Id='0'>"
                     foreach ($queryItem in $Query) {
@@ -188,17 +205,23 @@ function Set-WEFSubscription {
                     Remove-Variable -Name queryString -Force -Confirm:$false -WhatIf:$false -Debug:$false -Verbose:$false -ErrorAction SilentlyContinue -WarningAction SilentlyContinue 
                 }
                 "MaxLatency" {
-                    $propertyNameChangeList += "MaxLatency" 
+                    $propertyNameChangeList += "MaxLatency"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'MaxLatency'"
+
                     $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
                     $subscription.BaseObject.Subscription.Delivery.Batching.MaxLatencyTime = $MaxLatency.TotalMilliseconds.ToString() 
                 }
                 "HeartBeatInterval" {
                     $propertyNameChangeList += "HeartBeatInterval"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'HeartBeatInterval'"
+
                     $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
                     $subscription.BaseObject.Subscription.Delivery.PushSettings.Heartbeat.Interval = $HeartBeatInterval.TotalMilliseconds.ToString() 
                 }
                 "MaxItems" {
                     $propertyNameChangeList += "MaxItems"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'MaxItems'"
+
                     $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
                     if(-not ($subscription.BaseObject.Subscription.Delivery.Batching.MaxItems| Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml = $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml + '<MaxItems xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></MaxItems>'
@@ -207,30 +230,74 @@ function Set-WEFSubscription {
                 }
                 "TransportName" {
                     $propertyNameChangeList += "TransportName"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'TransportName'"
+
                     $subscription.BaseObject.Subscription.TransportName = $TransportName 
                 }
                 "SourceDomainComputer" {
                     $propertyNameChangeList += "SourceDomainComputer"
+                    Write-PSFMessage -Level Warning -Message "modifying SourceDomainComputer is not support yet"
 
                     # not support yet
-                    Write-PSFMessage -Level Warning -Message "modifying SourceDomainComputer is not support yet"
                 }
                 "SourceNonDomainDNSList" {
                     $propertyNameChangeList += "SourceNonDomainDNSList"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'SourceNonDomainDNSList' (AllowedSubjectList)"
 
-                    # not support yet
-                    Write-PSFMessage -Level Warning -Message "modifying SourceNonDomainDNSList is not support yet"
+                    # check if property "AllowedSourceNonDomainComputers" exist
+                    $dummyProperty = '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><AllowedIssuerCAList><IssuerCA></IssuerCA></AllowedIssuerCAList><AllowedSubjectList><Subject></Subject></AllowedSubjectList></AllowedSourceNonDomainComputers>'
+                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + $dummyProperty
+                    } elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
+                        $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml -replace '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></AllowedSourceNonDomainComputers>', $dummyProperty
+                    }
+
+                    # check if property "AllowedSubjectList" exist
+                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList | Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml = $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml + '<AllowedSubjectList xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><Subject></Subject></AllowedSubjectList>'
+                    }
+
+                    # build XML and set property
+                    $xmlText = ""
+                    foreach ($dnsItem in $SourceNonDomainDNSList) {
+                        $xmlText += "<Subject xmlns=""http://schemas.microsoft.com/2006/03/windows/events/subscription"">$($dnsItem)</Subject>"
+                    }
+                    $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.InnerXml = $xmlText
+
+                    # cleanup temporary vaiables
+                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false
                 }
                 "SourceNonDomainIssuerCAThumbprint" {
                     $propertyNameChangeList += "SourceNonDomainIssuerCAThumbprint"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'SourceNonDomainIssuerCAThumbprint' (AllowedIssuerCAList)"
+                    
+                    # check if property "AllowedSourceNonDomainComputers" exist
+                    $dummyProperty = '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><AllowedIssuerCAList><IssuerCA></IssuerCA></AllowedIssuerCAList><AllowedSubjectList><Subject></Subject></AllowedSubjectList></AllowedSourceNonDomainComputers>'
+                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + $dummyProperty
+                    } elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
+                        $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml -replace '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></AllowedSourceNonDomainComputers>', $dummyProperty
+                    }
 
-                    # not support yet
-                    Write-PSFMessage -Level Warning -Message "modifying SourceNonDomainIssuerCAThumbprint is not support yet"
+                    # check if property "AllowedIssuerCAList" exist
+                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList | Get-Member -ErrorAction SilentlyContinue)) {
+                        $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml = $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml + '<AllowedIssuerCAList xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><IssuerCA></IssuerCA></AllowedIssuerCAList>'
+                    }
+
+                    # build XML and set property
+                    $xmlText = ""
+                    foreach ($thumbprint in $SourceNonDomainIssuerCAThumbprint) {
+                        $xmlText += "<IssuerCA xmlns=""http://schemas.microsoft.com/2006/03/windows/events/subscription"">$($thumbprint)</IssuerCA>"
+                    }
+                    $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.InnerXml = $xmlText
+
+                    # cleanup temporary vaiables
+                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false
                 }
                 "Expires" {
                     $propertyNameChangeList += "Expires"
+                    Write-PSFMessage -Level Verbose -Message "Modifying property 'Expires'"
 
-                    
                     if(-not ($subscription.BaseObject.Subscription.Expires | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + '<Expires xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></Expires>'
                     }
