@@ -40,52 +40,64 @@ function Set-WEFSubscription {
             Available aliases: "Enable" and "Status" 
 
         .PARAMETER ReadExistingEvents
-            #ToBeDone#
-            <Boolean>
+            Specifies which kind of events are transfered.
+            If set TRUE, all events will be transfered. If set to false, 
+            only newly created events will be transfered.
 
         .PARAMETER ContentFormat
-            #ToBeDone#
+            Can be set to "Events" or "RenderedText".
+            This setting specifies, how events are transfered and rendered 
+            to server.
+            If setting is "RenderedText", the events will be rendered in the 
+            localization from the client. If setting is "Events", the 
+            interpreting of the events will be done on the server. 
+
+        .PARAMETER Locale
+            Localization schema for events.
+            Setting only apply when ContentFormat is "RenderedText".
             <String>
 
         .PARAMETER LogFile
-            #ToBeDone#
-            <String>
-
-        .PARAMETER Locale
-            #ToBeDone#
-            <String>
+            Name of the eventlog where to store the forwarded events.
 
         .PARAMETER Query
-            #ToBeDone#
-            <String[]>
+            Query string(s) which events will be included in the subscription.
+            Only the "Select"-part of the query has to be specified.
+
+            Example:
+            '<Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select>'
 
         .PARAMETER MaxLatency
-            #ToBeDone#
-            <TimeSpan>
+            Maximum latency interval in milliseconds while forwarding events.
 
         .PARAMETER HeartBeatInterval
-            #ToBeDone#
-            <TimeSpan>
+            Heartbeat interval in milliseconds.
 
         .PARAMETER MaxItems
-            #ToBeDone#
-            <Int32>
+            Amount of maxium events per interval to transfer.
 
         .PARAMETER TransportName
-            #ToBeDone#
-            <String>
+            Type of connection for transfering events. Possible values are "http" or "https".
+            (data is always encrypted, event when transfer mode is "http", which is the default)  
 
         .PARAMETER SourceDomainComputer
-            #ToBeDone#
-            <String[]>
+            Name(s) and/or SID(s) of computers or groups, to apply on the subscription. 
+            
+            Example:
+            "Domain computers", "Domain controllers", "MyComputerGroup"
+            "S-1-5-21-1234567890-12345678-123456789-515", "S-1-5-21-1234567890-12345678-123456789-516"
 
         .PARAMETER SourceNonDomainDNSList
-            #ToBeDone#
-            <String[]>
+            Name(s) of DNS match list.
+            
+            Example:
+            "*.mydomain.com"
 
         .PARAMETER SourceNonDomainIssuerCAThumbprint
-            #ToBeDone#
-            <String[]>
+            Certificate thumbprint(s) of trusted certificate authority..
+            
+            Example:
+            "100F1CAED645BB78B3EA2B94C0697C7407330010"
 
         .PARAMETER Expires
             Specifies a datetime when the subscription expires and computers will be no more active. 
@@ -100,6 +112,11 @@ function Set-WEFSubscription {
             
             Enable "Subscription1" by using the pipeline.
             Aliases "Enable" and "Status" available for parameter "Enabled". 
+
+        .EXAMPLE
+            PS C:\> Set-WEFSubscription -Name "MySubscription" -ComputerName "SERVER1" -Enabled $true -ReadExistingEvents $true -Query '<Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select>' -Description "This is my subscription" -SourceDomainComputer "Domain controllers", "MyComputerGroup"
+            
+            Enable "MySubscription" and set properties.
 
         .NOTES
             Author: Andreas Bellstedt
