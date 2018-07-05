@@ -22,9 +22,9 @@ function Set-WEFSubscription {
         ConfirmImpact = 'medium')]
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject")]
-#        [System.Management.Automation.PSCustomObject]
-#        [WEF.Subscription.SourceInitiated]
-#        [WEF.Subscription]
+        #[System.Management.Automation.PSCustomObject]
+        #[WEF.Subscription.SourceInitiated]
+        #[WEF.Subscription]
         $InputObject,
 
         [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "ComputerName")]
@@ -107,6 +107,7 @@ function Set-WEFSubscription {
         [datetime]
         $Expires
     )
+    
     Begin {
         # If session parameter is used -> transfer it to ComputerName,
         # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
