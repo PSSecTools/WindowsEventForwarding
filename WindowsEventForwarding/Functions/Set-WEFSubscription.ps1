@@ -124,19 +124,18 @@ function Set-WEFSubscription {
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
-    [CmdletBinding( DefaultParameterSetName = 'InputObject',
+    [CmdletBinding( DefaultParameterSetName = 'ComputerName',
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject")]
-        #[System.Management.Automation.PSCustomObject]
-        #[WEF.Subscription.SourceInitiated]
-        #[WEF.Subscription]
+        [WEF.Subscription[]]
         $InputObject,
 
-        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "ComputerName")]
-        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $true, ParameterSetName = "Session")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $false, ParameterSetName = "ComputerName")]
+        [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $false, ParameterSetName = "Session")]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
+        [ValidateNotNullOrEmpty()]
         [String[]]
         $Name,
 
@@ -144,7 +143,7 @@ function Set-WEFSubscription {
         [Alias("host", "hostname", "Computer", "DNSHostName")]
         [PSFComputer[]]
         $ComputerName = $env:COMPUTERNAME,
-		
+
         [Parameter(ParameterSetName = "Session")]
         [System.Management.Automation.Runspaces.PSSession[]]
         $Session,
@@ -220,30 +219,24 @@ function Set-WEFSubscription {
         # If session parameter is used -> transfer it to ComputerName,
         # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
         if ($Session) { $ComputerName = $Session }
-
-        #$nameBound = Test-PSFParameterBinding -ParameterName Name
-        #$computerBound = Test-PSFParameterBinding -ParameterName ComputerName
     }
 
     Process {
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
-        #region parameterset workarround
-        # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
-        #if (-not ($nameBound -or $computerBound) -and $ComputerName.InputObject -and $PSCmdlet.ParameterSetName -ne "Session") {
-        #    if ($ComputerName.InputObject -is [string]) { $ComputerName = $env:ComputerName } else { $Name = "" }
-        #}
-        #endregion parameterset workarround
-
         #region query specified subscription when not piped in
         if($PsCmdlet.ParameterSetName -ne "InputObject") {
             # when not inputobject --> query for existing object to modify 
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
-            $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
+            try {
+                $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
+            } catch {
+                Stop-PSFFunction -Message "Error finding subscription '$name' on computer $computer" -ErrorRecord $_ -EnableException $true
+            }
             if (-not $InputObject) {
                 $message = "Subscription $Name not found"
                 if($ComputerName) { $message = $message + " on " + $ComputerName }
-                throw $message 
+                Stop-PSFFunction -Message $message  -ErrorRecord $_ -EnableException $true
             }
         }
         #endregion query specified subscription when not piped in

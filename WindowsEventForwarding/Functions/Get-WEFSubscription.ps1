@@ -80,6 +80,7 @@ function Get-WEFSubscription {
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0)]
         [Alias("DisplayName", "SubscriptionID", "Idendity")]
+        [ValidateNotNullOrEmpty()]
         [String[]]
         $Name,
 
@@ -195,8 +196,8 @@ function Get-WEFSubscription {
                     # Compiling the output object
                     $subscriptionObjectProperties = [ordered]@{
                         BaseObject = $subscription
-                        PSSession  = $Session
                     }
+                    if(-not $Computer.IsLocalHost) { $subscriptionObjectProperties.Add("PSComputerName", $Computer.ComputerName) }
                     $output = New-Object -TypeName psobject -Property $subscriptionObjectProperties
 
                     # Add typnames to the output object. this adds all the script properties to the output object,
