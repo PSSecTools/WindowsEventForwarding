@@ -52,7 +52,7 @@ function Remove-WEFSubscription {
         ConfirmImpact = 'High')]
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0, ParameterSetName = "InputObject")]
-        #[WEF.Subscription[]]
+        [WEF.Subscription[]]
         $InputObject,
 
         [Parameter(ValueFromPipeline = $false, Position = 0, Mandatory = $false, ParameterSetName = "ComputerName")]

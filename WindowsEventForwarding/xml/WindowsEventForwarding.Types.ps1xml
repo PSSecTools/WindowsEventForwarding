@@ -177,7 +177,7 @@
 
 
     <Type>
-        <Name>WEF.Subscription.SourceInitiated</Name>
+        <Name>WEF.SubscriptionSourceInitiated</Name>
         <Members>
             <ScriptProperty>
                 <Name>AllowedSourceDomainComputersSDDLString</Name>
@@ -223,7 +223,7 @@
 
 
     <Type>
-        <Name>WEF.Subscription.CollectorInitiated</Name>
+        <Name>WEF.SubscriptionCollectorInitiated</Name>
         <Members>
             <ScriptProperty>
                 <Name>CredentialsType</Name>

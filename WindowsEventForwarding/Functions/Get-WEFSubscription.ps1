@@ -197,13 +197,14 @@ function Get-WEFSubscription {
                     $subscriptionObjectProperties = [ordered]@{
                         BaseObject = $subscription
                     }
-                    if(-not $Computer.IsLocalHost) { $subscriptionObjectProperties.Add("PSComputerName", $Computer.ComputerName) }
-                    $output = New-Object -TypeName psobject -Property $subscriptionObjectProperties
-
+                    #if(-not $Computer.IsLocalHost) { $subscriptionObjectProperties.Add("PSComputerName", $Computer.ComputerName) }
+                    $output = New-Object -TypeName "$($typeName)$($subscription.Subscription.SubscriptionType)" -Property $subscriptionObjectProperties
+                    if(-not $Computer.IsLocalHost) { Add-Member -InputObject $output -MemberType NoteProperty -Name "PSComputerName" -Value $Computer.ComputerName -Force }
+                    
                     # Add typnames to the output object. this adds all the script properties to the output object,
-                    $output.pstypenames.Insert(0, $BaseType)
-                    $output.pstypenames.Insert(0, $typeName)
-                    $output.pstypenames.Insert(0, "$($typeName).$($subscription.Subscription.SubscriptionType)")
+                    #$output.pstypenames.Insert(2, $BaseType)
+                    #$output.pstypenames.Insert(0, $typeName)
+                    #$output.pstypenames.Insert(0, "$($typeName)$($subscription.Subscription.SubscriptionType)")
 
                     # write the object to the pipeline
                     $output
