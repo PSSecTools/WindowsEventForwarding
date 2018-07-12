@@ -212,7 +212,10 @@ function Set-WEFSubscription {
 
         [ValidateNotNullOrEmpty()]
         [datetime]
-        $Expires
+        $Expires,
+
+        [switch]
+        $PassThru
     )
     
     Begin {
@@ -523,6 +526,16 @@ function Set-WEFSubscription {
                     Invoke-PSFCommand @invokeParams -ScriptBlock { Remove-Item -Path "$env:TEMP\$( $args[2] )" -Force -Confirm:$false }
                 } else { 
                     Write-PSFMessage -Level Critical -Message "Error deleting temp files! $($ErrorReturn)" -Target $subscription.ComputerName
+                }
+
+                if($PassThru) {
+                    Write-PSFMessage -Level Verbose -Message "Passthru specified, gathering changed subscription '$($subscription.Name)' on '$ComputerName' again"
+                    try {
+                        $output = Get-WEFSubscription -Name $subscription.Name -ComputerName $ComputerName -ErrorAction Stop
+                        if($output) { $output } else { Write-Error "" -ErrorAction Stop}
+                    } catch {
+                        Stop-PSFFunction -Message "Error finding subscription '$($subscription.Name)' on computer $computer" -ErrorRecord $_ -EnableException $true
+                    }
                 }
             }
             #endregion Change subscription in system
