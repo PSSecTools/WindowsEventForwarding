@@ -109,7 +109,7 @@ function Resume-WEFSubscription {
 
             #region Resume subscription from system
             # Retry existing subscription. Execute wecutil to retry subscription with redirecting error output
-            if ($pscmdlet.ShouldProcess("Subscription: $($subscription.Name) on computer '$($subscription.ComputerName)'", "Remove")) {
+            if ($pscmdlet.ShouldProcess("Subscription: $($subscription.Name) on computer '$($subscription.ComputerName)'", "Resume")) {
                 Write-PSFMessage -Level Verbose -Message "Resume subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'" -Target $subscription.ComputerName
                 
                 $invokeParams = @{
