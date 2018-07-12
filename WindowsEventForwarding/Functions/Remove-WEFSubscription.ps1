@@ -75,7 +75,10 @@ function Remove-WEFSubscription {
         $Credential,
 
         [Switch]
-        $Force
+        $Force,
+
+        [Switch]
+        $PassThru
     )
     
     Begin {
@@ -137,6 +140,12 @@ function Remove-WEFSubscription {
                     $ErrorMsg = [string]::Join(" ", $ErrorReturn.Exception.Message.Replace("`r`n"," "))
                     throw "Error removing subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'! $($ErrorMsg)"
                 }
+
+                if($PassThru) {
+                    Write-PSFMessage -Level Verbose -Message "Passthru specified, output deleted object '$($subscription.Name)' on '$ComputerName'"
+                    $subscription
+                }
+
             }
             #endregion Reomve subscription from system
         }
