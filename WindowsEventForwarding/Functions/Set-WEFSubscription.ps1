@@ -486,7 +486,7 @@ function Set-WEFSubscription {
                     throw "Error creating temp file for subscription!"
                 }
                 
-                # Delete existing subscription. execute wecutil to delete subscription with redirectoing error output
+                # Delete existing subscription. execute wecutil to delete subscription with redirecting error output
                 try {
                     $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -500,7 +500,7 @@ function Set-WEFSubscription {
                     throw "Error deleting existing subscription before recreating it! $($ErrorMsg)"
                 }
 
-                # Recreate changed subscription. execute wecutil to recreate changed subscription with redirectoing error output
+                # Recreate changed subscription. execute wecutil to recreate changed subscription with redirecting error output
                 try {
                     $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
                         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

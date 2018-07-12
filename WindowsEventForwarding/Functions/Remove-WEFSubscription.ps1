@@ -110,11 +110,9 @@ function Remove-WEFSubscription {
 
         foreach ($subscription in $InputObject) {
             Write-PSFMessage -Level Verbose -Message "Processing '$($subscription.Name)' on '$($subscription.ComputerName)'" -Target $subscription.ComputerName
-            #region preparation
-            #endregion preparation
 
-            #region Reomve subscription from system
-            # Delete existing subscription. execute wecutil to delete subscription with redirectoing error output
+            #region Remove subscription from system
+            # Delete existing subscription. Execute wecutil to delete subscription with redirecting error output
             if ($pscmdlet.ShouldProcess("Subscription: $($subscription.Name) on computer '$($subscription.ComputerName)'", "Remove")) {
                 Write-PSFMessage -Level Verbose -Message "Remove subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'" -Target $subscription.ComputerName
                 
@@ -147,7 +145,7 @@ function Remove-WEFSubscription {
                 }
 
             }
-            #endregion Reomve subscription from system
+            #endregion Remove subscription from system
         }
     }
 
