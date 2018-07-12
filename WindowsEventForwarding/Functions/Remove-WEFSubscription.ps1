@@ -126,10 +126,10 @@ function Remove-WEFSubscription {
                 if($Credential) { $invokeParams.Add("Credential", $Credential)}
 
                 try {
-                    #$null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
-                    #    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-                    #    . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" 2>&1 
-                    #}
+                    $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
+                        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                        . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" 2>&1 
+                    }
                     if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
                 } catch {
                     Write-PSFMessage -Level Verbose -Message "Error on remove subscription. This should not happen - unexpected behaviour." -Target $subscription.ComputerName
