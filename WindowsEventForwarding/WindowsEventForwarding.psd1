@@ -73,6 +73,7 @@ All cmdlets are build with
 		'Get-WEFSubscription',
 		'Set-WEFSubscription'
 		'Remove-WEFSubscription'
+		'Resume-WEFSubscription'
 	)
 	
 	# Cmdlets to export from this module
