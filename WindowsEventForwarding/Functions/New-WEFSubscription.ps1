@@ -305,11 +305,11 @@ function New-WEFSubscription {
                                     $xmlWriter.WriteStartElement("AllowedIssuerCAList") # Start AllowedIssuerCAList
                                     foreach ($SourceNonDomainIssuerCAThumbprintItem in $subscriptionProperties.SourceNonDomainIssuerCAThumbprint) {
                                         $xmlWriter.WriteElementString("IssuerCA", $SourceNonDomainIssuerCAThumbprintItem)
-                                    
+                                    }
                                     $xmlWriter.WriteEndElement() # Closing AllowedIssuerCAList
                                     $xmlWriter.WriteStartElement("AllowedSubjectList") # Start AllowedSubjectList
                                     foreach ($SourceNonDomainDNSListItem in $subscriptionProperties.SourceNonDomainDNSList) {
-                                        $xmlWriter.WriteElementString("Subject", $SourceNonDomainDNSListItem)
+                                        $xmlWriter.WriteElementString("Subject", $SourceNonDomainDNSListItem) 
                                     }
                                     $xmlWriter.WriteEndElement() # Closing AllowedSubjectList                                    
                                     $xmlWriter.WriteEndElement() # Closing AllowedSourceNonDomainComputers
@@ -335,7 +335,7 @@ function New-WEFSubscription {
                             $xmlWriter.Flush()
                             $xmlWriter.Close()
                         }
-                        if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
+                        if($ErrorReturn) { Write-Error "" -ErrorAction Stop }
                     } catch {
                         Write-PSFMessage -Level Verbose -Message "Error on create subscription." -Target $computer
                         $ErrorReturn = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' }
@@ -343,7 +343,6 @@ function New-WEFSubscription {
                         throw "Error creating subscription '$($nameItem)' on computer '$($computer)'! $($ErrorMsg)"    
                     }
                 }
-
             }
             #endregion Processing Events
         }
