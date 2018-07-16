@@ -22,6 +22,9 @@ function New-WEFSubscription {
             
             Create a new subscription "MySubScription"
 
+        .EXAMPLE
+            PS C:\> New-WEFSubscription -Name "MySubscription" -Type CollectorInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer XPS-AB
+
         .NOTES
             Author: Andreas Bellstedt
 
@@ -178,7 +181,7 @@ function New-WEFSubscription {
                 return
             }
 
-            if(-not (Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-WinEvent -ListLog $using:LogFile })) {
+            if(-not (Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-WinEvent -ListLog $args[0] } -ArgumentList $LogFile)) {
                 Stop-PSFFunction -Message "Eventlog '$($LogFile)' not found on computer '$($computer)'. Aborting creation of subscription."
                 return
             }
@@ -230,7 +233,7 @@ function New-WEFSubscription {
                             $subscriptionProperties = $args[0]
 
                             # Create our new XML File	
-                            $xmlFilePath = $env:TEMP + "\" +$args[1]
+                            $xmlFilePath = $env:TEMP + "\" + $args[1]
                             $XmlWriter = New-Object System.XMl.XmlTextWriter($xmlFilePath, $null)
 
                             # Set The Formatting
@@ -252,6 +255,7 @@ function New-WEFSubscription {
                             $xmlWriter.WriteStartElement("Delivery") # Start Delivery
                             $xmlWriter.WriteAttributeString("Mode", $subscriptionProperties.Mode)
                             $xmlWriter.WriteStartElement("Batching") # Start Batching
+                            if($subscriptionProperties.MaxItems) { $xmlWriter.WriteElementString("MaxItems", $subscriptionProperties.MaxItems) }
                             $xmlWriter.WriteElementString("MaxLatencyTime", $subscriptionProperties.MaxLatency.TotalMilliseconds)
                             $xmlWriter.WriteEndElement() # Close Batching
                             $xmlWriter.WriteStartElement("PushSettings") # Start PushSettings
@@ -260,6 +264,7 @@ function New-WEFSubscription {
                             $xmlWriter.WriteEndElement() # Closing Heartbeat
                             $xmlWriter.WriteEndElement() # Closing PushSettings
                             $xmlWriter.WriteEndElement() # Closing Delivery
+                            if($subscriptionProperties.Expires) { $xmlWriter.WriteElementString("Expires", (Get-Date -Date $subscriptionProperties.Expires -Format s)) }
                             $xmlWriter.WriteStartElement("Query") # Start Query
                             $xmlWriter.WriteCData("<QueryList> <Query Id='0'>`r`t$( [string]::Join("`r`t", $subscriptionProperties.Query) )`r</Query></QueryList>")
                             $xmlWriter.WriteEndElement() # Closing Query
@@ -337,10 +342,47 @@ function New-WEFSubscription {
                         }
                         if($ErrorReturn) { Write-Error "" -ErrorAction Stop }
                     } catch {
-                        Write-PSFMessage -Level Verbose -Message "Error on create subscription." -Target $computer
+                        Stop-PSFFunction -Message "Error on creating temporary configuration file for subscription '$($nameItem)' on computer '$($computer)'." -Target $computer -EnableException $true
+                    }
+
+                    # Create subscription from config file in temp folder
+                    try {
+                        $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
+                            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+                            . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[1] )" 2>&1 
+                        }
+                        if($ErrorReturn) { Write-Error -Message $ErrorReturn -ErrorAction Stop}    
+                    } catch {
                         $ErrorReturn = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' }
                         $ErrorMsg = [string]::Join(" ", $ErrorReturn.Exception.Message.Replace("`r`n"," "))
-                        throw "Error creating subscription '$($nameItem)' on computer '$($computer)'! $($ErrorMsg)"    
+                        $ErrorCode = if($ErrorMsg -like "*Error = *") { ($ErrorMsg -Split "Error = ")[1].split(".")[0] } else { 0 }
+                        if($ErrorMsg -like "Warnung: *") { $ErrorCode = "Warn1" }
+                        switch ($ErrorCode) {
+                            "0x3ae8" { 
+                                Write-PSFMessage -Level Warning -Message "Warning recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer 
+                            }
+                            "Warn1" {
+                                Write-PSFMessage -Level Warning -Message "Warning recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer 
+                            }
+                            Default { Stop-PSFFunction -Message "Error creating subscription '$($nameItem)' from config file '$($invokeParams.ArgumentList[1])' on computer '$($computer)'! wecutil.exe message: $($ErrorMsg)" -Target $computer -EnableException $true -Continue }
+                        }
+                        Clear-Variable -Name ErrorReturn -Force
+                    }
+
+                    # Cleanup the xml garbage (temp file)
+                    try {
+                        Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temp stuff" -Target $computer
+                        Invoke-PSFCommand @invokeParams -ScriptBlock { Remove-Item -Path "$env:TEMP\$( $args[1] )" -Force -Confirm:$false }
+                        if($ErrorReturn) { Write-Error -Message $ErrorReturn -ErrorAction Stop}
+                    } catch { 
+                        Stop-PSFFunction -Message "Error deleting temp files! $($ErrorReturn)" -ErrorRecord $ErrorReturn -Target $computer -EnableException $true -Continue
+                    }
+
+                    try {
+                        $output = Get-WEFSubscription -Name $nameItem -ComputerName $computer -ErrorAction Stop -ErrorVariable "ErrorReturn"
+                        if($output) { $output } else { Write-Error $ErrorReturn -ErrorAction Stop}
+                    } catch {
+                        Stop-PSFFunction -Message "Error finding subscription '$($nameItem)' on computer $computer" -ErrorRecord $_ -EnableException $true
                     }
                 }
             }
