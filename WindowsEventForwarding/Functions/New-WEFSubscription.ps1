@@ -272,22 +272,60 @@ function New-WEFSubscription {
                             $xmlWriter.WriteElementString("LogFile", $subscriptionProperties.LogFile)
                             $xmlWriter.WriteElementString("PublisherName", "")
                             
-                            # TBD
-                            <#
-                            $xmlWriter.WriteElementString("AllowedSourceNonDomainComputers", "")
+                            if($subscriptionProperties.Type -eq 'SourceInitiated') {
+                                # SourceInitiated subscription 
+                                if($subscriptionProperties.SourceDomainComputer) {
+                                    # Parse every value specified, translate from name to SID 
+                                    $sddlString = "O:NSG:BAD:P"
+                                    foreach ($sourceDomainComputerItem in $subscriptionProperties.SourceDomainComputer) {
+                                        if($sourceDomainComputerItem -match 'S-1-5-21-(\d|-)*$') {
+                                            # sourceDomainComputerItem is a SID, no need to translate
+                                            $SID = $sourceDomainComputerItem
+                                        } else {
+                                            # try to translate name to SID 
+                                            try {
+                                                $SID = [System.Security.Principal.NTAccount]::new( $sourceDomainComputerItem ).Translate([System.Security.Principal.SecurityIdentifier]).Value
+                                            } catch {
+                                                Write-Error -Message "Cannot convert '$sourceDomainComputerItem' to a valid SID! '$sourceDomainComputerItem' will not be included as SourceDomainComputer in subscription."
+                                                return
+                                            }
+                                        }
+                                        # Insert SDDL-String with SID
+                                        $sddlString = $sddlString + "(A;;GA;;;" + $SID + ")"
+                                        Remove-Variable -Name SID -Force -Confirm:$false -WhatIf:$false -Verbose:$false
+                                    }
+                                    $sddlString = $sddlString + "S:"
 
-                            $SID = ""
-                            $SID = [System.Security.Principal.NTAccount]::new( $Channel.TargetGroup ).Translate([System.Security.Principal.SecurityIdentifier]).Value
-                            if ($SID) {
-                                $xmlWriter.WriteElementString("AllowedSourceDomainComputers", "O:NSG:BAD:P(A;;GA;;;" + $SID + ")S:")
+                                    $xmlWriter.WriteElementString("AllowedSourceDomainComputers", $sddlString)
+                                    Remove-Variable -Name sddlString -Force -Confirm:$false -WhatIf:$false -Verbose:$false
+                                }
+
+                                if($subscriptionProperties.SourceNonDomainDNSList -or $subscriptionProperties.SourceNonDomainIssuerCAThumbprint) {
+                                    $xmlWriter.WriteStartElement("AllowedSourceNonDomainComputers") # Start AllowedSourceNonDomainComputers
+                                    $xmlWriter.WriteStartElement("AllowedIssuerCAList") # Start AllowedIssuerCAList
+                                    foreach ($SourceNonDomainIssuerCAThumbprintItem in $subscriptionProperties.SourceNonDomainIssuerCAThumbprint) {
+                                        $xmlWriter.WriteElementString("IssuerCA", $SourceNonDomainIssuerCAThumbprintItem)
+                                    
+                                    $xmlWriter.WriteEndElement() # Closing AllowedIssuerCAList
+                                    $xmlWriter.WriteStartElement("AllowedSubjectList") # Start AllowedSubjectList
+                                    foreach ($SourceNonDomainDNSListItem in $subscriptionProperties.SourceNonDomainDNSList) {
+                                        $xmlWriter.WriteElementString("Subject", $SourceNonDomainDNSListItem)
+                                    }
+                                    $xmlWriter.WriteEndElement() # Closing AllowedSubjectList                                    
+                                    $xmlWriter.WriteEndElement() # Closing AllowedSourceNonDomainComputers
+                                }
                             } else {
-                                Write-Error -Message "Subscription for channel '$($Channel.ChannelName)' could not be genereated. Could not find group with name '$($Channel.TargetGroup)' in the environment."
-                                $xmlWriter.Close()
-                                Remove-Item -Path $xmlFilePath -Force -Confirm:$false
-                                return
+                                # CollectorInitiated subscription
+                                $xmlWriter.WriteElementString("CredentialsType", "Default")
+                                $xmlWriter.WriteStartElement("EventSources") # Start EventSources
+                                foreach ($sourceDomainComputerItem in $subscriptionProperties.SourceDomainComputer) {
+                                    $xmlWriter.WriteStartElement("EventSource") # Start EventSource
+                                    $xmlWriter.WriteAttributeString("Enabled", "true")
+                                    $xmlWriter.WriteElementString("Address", $sourceDomainComputerItem)
+                                    $xmlWriter.WriteEndElement() # Closing EventSourc
+                                }
+                                $xmlWriter.WriteEndElement() # Closing EventSource
                             }
-                            $xmlWriter.WriteEndElement()   # Closing Subscription
-                            #>
 
                             # End the XML Document
                             $xmlWriter.WriteEndDocument()
