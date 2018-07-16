@@ -144,7 +144,8 @@ function Get-WEFSubscription {
             Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
             $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
             if ($service.Status -ne 'Running') {
-                throw "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
+                Stop-PSFFunction -Message "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
+                return
             }
 
             # Get a list of names for all subscriptions available on the system
