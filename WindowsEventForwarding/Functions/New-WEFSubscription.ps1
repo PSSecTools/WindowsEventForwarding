@@ -14,16 +14,17 @@ function New-WEFSubscription {
             Name of the subscription to filter by.
 
         .PARAMETER Type
-            The type of the subscription
-
+            The type of the subscription.
 
         .EXAMPLE
-            PS C:\> New-WEFSubscription -Name "MySubscription"
+            PS C:\> New-WEFSubscription -Name "MySubscription" -Type CollectorInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Server1"
             
-            Create a new subscription "MySubScription"
+            Create a new CollectorInitiated subscription "MySubScription"
 
         .EXAMPLE
-            PS C:\> New-WEFSubscription -Name "MySubscription" -Type CollectorInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer XPS-AB
+            PS C:\> New-WEFSubscription -Name "MySubscription" -Type SourceInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Domain computers"
+            
+            Create a new SourceInitiated subscription "MySubScription"
 
         .NOTES
             Author: Andreas Bellstedt
@@ -252,18 +253,20 @@ function New-WEFSubscription {
                             $xmlWriter.WriteElementString("Enabled", [bool]::Parse($subscriptionProperties.Enabled))
                             $xmlWriter.WriteElementString("Uri", "http://schemas.microsoft.com/wbem/wsman/1/windows/EventLog")
                             $xmlWriter.WriteElementString("ConfigurationMode", $subscriptionProperties.ConfigurationMode)
-                            $xmlWriter.WriteStartElement("Delivery") # Start Delivery
-                            $xmlWriter.WriteAttributeString("Mode", $subscriptionProperties.Mode)
-                            $xmlWriter.WriteStartElement("Batching") # Start Batching
-                            if($subscriptionProperties.MaxItems) { $xmlWriter.WriteElementString("MaxItems", $subscriptionProperties.MaxItems) }
-                            $xmlWriter.WriteElementString("MaxLatencyTime", $subscriptionProperties.MaxLatency.TotalMilliseconds)
-                            $xmlWriter.WriteEndElement() # Close Batching
-                            $xmlWriter.WriteStartElement("PushSettings") # Start PushSettings
-                            $xmlWriter.WriteStartElement("Heartbeat") # Start Heartbeat
-                            $xmlWriter.WriteAttributeString("Interval", $subscriptionProperties.HeartBeatInterval.TotalMilliseconds)
-                            $xmlWriter.WriteEndElement() # Closing Heartbeat
-                            $xmlWriter.WriteEndElement() # Closing PushSettings
-                            $xmlWriter.WriteEndElement() # Closing Delivery
+                            if($subscriptionProperties.ConfigurationMode -eq "Custom") {
+                                $xmlWriter.WriteStartElement("Delivery") # Start Delivery
+                                $xmlWriter.WriteAttributeString("Mode", $subscriptionProperties.Mode)
+                                $xmlWriter.WriteStartElement("Batching") # Start Batching
+                                if($subscriptionProperties.MaxItems) { $xmlWriter.WriteElementString("MaxItems", $subscriptionProperties.MaxItems) }
+                                $xmlWriter.WriteElementString("MaxLatencyTime", $subscriptionProperties.MaxLatency.TotalMilliseconds)
+                                $xmlWriter.WriteEndElement() # Close Batching
+                                $xmlWriter.WriteStartElement("PushSettings") # Start PushSettings
+                                $xmlWriter.WriteStartElement("Heartbeat") # Start Heartbeat
+                                $xmlWriter.WriteAttributeString("Interval", $subscriptionProperties.HeartBeatInterval.TotalMilliseconds)
+                                $xmlWriter.WriteEndElement() # Closing Heartbeat
+                                $xmlWriter.WriteEndElement() # Closing PushSettings
+                                $xmlWriter.WriteEndElement() # Closing Delivery
+                            }
                             if($subscriptionProperties.Expires) { $xmlWriter.WriteElementString("Expires", (Get-Date -Date $subscriptionProperties.Expires -Format s)) }
                             $xmlWriter.WriteStartElement("Query") # Start Query
                             $xmlWriter.WriteCData("<QueryList> <Query Id='0'>`r`t$( [string]::Join("`r`t", $subscriptionProperties.Query) )`r</Query></QueryList>")
