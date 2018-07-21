@@ -71,6 +71,8 @@ All cmdlets are build with
 	# Functions to export from this module
 	FunctionsToExport  = @(
 		'Get-WEFSubscription'
+		'New-WEFCollectorInitiatedSubscription'
+		'New-WEFSourceInitiatedSubscription'
 		'New-WEFSubscription'
 		'Remove-WEFSubscription'
 		'Resume-WEFSubscription'
