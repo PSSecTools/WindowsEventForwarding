@@ -23,7 +23,7 @@ function New-WEFCollectorInitiatedSubscription {
 
             Aliases for the parameter: "DisplayName", "SubscriptionID", "Idendity"
 
-        .PARAMETER Description 
+        .PARAMETER Description
             The description of the Windows Event Forwarding subscription.
 
         .PARAMETER Enabled
@@ -38,7 +38,7 @@ function New-WEFCollectorInitiatedSubscription {
 
         .PARAMETER ContentFormat
             The format for the data transfered to the server.
-            Events       = Binary event data are transfered from the source computer to the destition WEF server. Localization apply on the WEF server 
+            Events       = Binary event data are transfered from the source computer to the destition WEF server. Localization apply on the WEF server
             RenderedText = Localized data from the source computer are transfered to the WEF server. (This format contains more bandwidth)
 
         .PARAMETER LogFile
@@ -51,7 +51,7 @@ function New-WEFCollectorInitiatedSubscription {
         .PARAMETER Query
             The filter query for the events to collect. One or more queries must be specified.
 
-            Example: <Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select> 
+            Example: <Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select>
 
         .PARAMETER ConfigurationMode
             The timing setting for the event delivery on a subscription.
@@ -79,13 +79,13 @@ function New-WEFCollectorInitiatedSubscription {
 
         .PARAMETER MaxItems
             The maximum amount of events on a delivery process.
-            This is a optional setting and not configured by default. 
+            This is a optional setting and not configured by default.
 
         .PARAMETER TransportName
             Specifies that the transport layer for the forwarded events. Can be set to "http" (default)
-            or "https", which add an additional layer of transport security. (PKI/certificates needed on the 
-            machines). 
-            In a domain environment transmit is encrypted via kerberos. The authentication is done via kerberos 
+            or "https", which add an additional layer of transport security. (PKI/certificates needed on the
+            machines).
+            In a domain environment transmit is encrypted via kerberos. The authentication is done via kerberos
             (domain) or with ntlm (workgroup). Authentication is encrypted regardless to the transport security.
             Transport security is only needed outside a domain environment for the event transmit.
 
@@ -99,7 +99,7 @@ function New-WEFCollectorInitiatedSubscription {
 
         .EXAMPLE
             PS C:\> New-WEFCollectorInitiatedSubscription -Name "MySubscription" -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Server1"
-            
+
             Create a new CollectorInitiated subscription "MySubScription"
 
         .NOTES
@@ -108,9 +108,9 @@ function New-WEFCollectorInitiatedSubscription {
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
-    [CmdletBinding(DefaultParameterSetName ='ComputerName', 
-        SupportsShouldProcess = $true, 
-        ConfirmImpact = 'Medium', 
+    [CmdletBinding(DefaultParameterSetName ='ComputerName',
+        SupportsShouldProcess = $true,
+        ConfirmImpact = 'Medium',
         RemotingCapability = 'SupportedByCommand')]
     Param(
         [Parameter(ParameterSetName='ComputerName', Position=1, ValueFromPipeline=$true)]

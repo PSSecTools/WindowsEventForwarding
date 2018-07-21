@@ -30,42 +30,42 @@ function Get-WEFSubscription {
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription
-            
+
             Display all available subscription
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription -Name MySubscription, Subscription2
-            
+
             Display Subscriptions by name. Multiple values are supported
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription -Enabled $true
-            
+
             Display only subscriptions with status "enabled".
             This can filter down the output.
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription -ContentFormat RenderedText
-            
+
             Display only subscriptions with contentformat "RenderedText" set.
             This can filter down the output.
 
         .EXAMPLE
             PS C:\> "MySubscription" | Get-WEFSubscription -ComputerName Server01
-            
+
             Display the subscription "MySubscription" from the remote server "Server01".
             Arrays can be piped in or specified as ComputerName ether.
 
         .EXAMPLE
             PS C:\> "Server01" | Get-WEFSubscription -Name "MySubscription"
-            
+
             Display the subscription "MySubscription" from the remote server "Server01".
             Arrays can be piped in or specified as ComputerName ether.
             Please notice, that this is a differnt parmeter set from the previous example.
 
         .EXAMPLE
             PS C:\> $Session | Get-WEFSubscription "MySubscription*"
-            
+
             Display subscriptions from an existing PSRemoting session.
             The $session variable has to be declared before. (e.g. $Session = New-PSSession -ComputerName Server01)
 
@@ -75,7 +75,7 @@ function Get-WEFSubscription {
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName', 
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName',
         ConfirmImpact = 'low')]
     Param(
         [Parameter(ValueFromPipeline = $true, Position = 0)]
@@ -116,9 +116,9 @@ function Get-WEFSubscription {
     Begin {
         $typeName = "$($script:BaseType).Subscription"
         $listAll = $false
-        
+
         # If session parameter is used -> transfer it to ComputerName,
-        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
+        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block
         if ($Session) { $ComputerName = $Session }
 
         if ($Enabled) { [bool]$filterEnabled = [bool]::Parse($Enabled) }
@@ -165,7 +165,7 @@ function Get-WEFSubscription {
             foreach ($nameItem in $Name) {
                 # Filtering out the subscriptions to query
                 $subscriptionItemsToQuery = $subscriptionEnumeration | Where-Object { $_ -like $nameItem }
-				
+
                 # Query subscription infos if there is a matching subscription in the list
                 if ($subscriptionItemsToQuery) {
                     $subscriptions = @()
@@ -188,7 +188,7 @@ function Get-WEFSubscription {
 
                 # Transforming xml infos to powershell objects
                 if (-not $subscriptions -and -not $listAll) {
-                    Write-PSFMessage -Level Verbose -Message "Subscription '$($nameItem)' not found on $($computer) or filtered out." -Target $computer
+                    Write-PSFMessage -Level Warning -Message "Subscription '$($nameItem)' not found on $($computer) or filtered out." -Target $computer
                     continue
                 }
                 foreach ($subscription in $subscriptions) {
@@ -198,10 +198,9 @@ function Get-WEFSubscription {
                     $subscriptionObjectProperties = [ordered]@{
                         BaseObject = $subscription
                     }
-                    #if(-not $Computer.IsLocalHost) { $subscriptionObjectProperties.Add("PSComputerName", $Computer.ComputerName) }
                     $output = New-Object -TypeName "$($typeName)$($subscription.Subscription.SubscriptionType)" -Property $subscriptionObjectProperties
                     if(-not $Computer.IsLocalHost) { Add-Member -InputObject $output -MemberType NoteProperty -Name "PSComputerName" -Value $Computer.ComputerName -Force }
-                    
+
                     # write the object to the pipeline
                     $output
                 }

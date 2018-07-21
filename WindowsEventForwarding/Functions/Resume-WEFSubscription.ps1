@@ -33,12 +33,12 @@ function Resume-WEFSubscription {
 
         .EXAMPLE
             PS C:\> Resume-WEFSubscription -Name "Subscription1"
-            
+
             Resume the subscription "Subscription1" to "Subscription1New"
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription -Name "Subscription1" | Resume-WEFSubscription
-            
+
             Resume "Subscription1" by using the pipeline.
 
         .NOTES
@@ -77,19 +77,20 @@ function Resume-WEFSubscription {
         [Switch]
         $PassThru
     )
-    
+
     Begin {
         # If session parameter is used -> transfer it to ComputerName,
-        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
+        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block
         if ($Session) { $ComputerName = $Session }
     }
 
     Process {
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
         if($PsCmdlet.ParameterSetName -ne "InputObject") {
-            # when not inputobject --> query for existing object to modify 
+            # when not inputobject --> query for existing object to modify
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
             try {
                 $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
@@ -111,7 +112,7 @@ function Resume-WEFSubscription {
             # Retry existing subscription. Execute wecutil to retry subscription with redirecting error output
             if ($pscmdlet.ShouldProcess("Subscription: $($subscription.Name) on computer '$($subscription.ComputerName)'", "Resume")) {
                 Write-PSFMessage -Level Verbose -Message "Resume subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'" -Target $subscription.ComputerName
-                
+
                 $invokeParams = @{
                     ComputerName  = $subscription.ComputerName
                     ErrorAction   = "Stop"
@@ -123,16 +124,20 @@ function Resume-WEFSubscription {
                 if($Credential) { $invokeParams.Add("Credential", $Credential)}
 
                 try {
-                    $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
-                        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-                        . "$env:windir\system32\wecutil.exe" "retry-subscription" "$($args[0])" 2>&1 
+                    $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                        . "$env:windir\system32\wecutil.exe" "retry-subscription" "$($args[0])" *>&1
                     }
                     if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
                 } catch {
-                    Write-PSFMessage -Level Verbose -Message "Error while resume subscription '$($subscription.Name)' on '$($subscription.ComputerName)'." -Target $subscription.ComputerName
-                    $ErrorReturn = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' }
-                    $ErrorMsg = [string]::Join(" ", $ErrorReturn.Exception.Message.Replace("`r`n"," "))
-                    Stop-PSFFunction -Message "Error resuming subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'! $($ErrorMsg)" -ErrorRecord $_ -EnableException $false
+                    $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
+                    if($ErrorReturnWEC) {
+                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
+                    } else {
+                        $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
+                    }
+
+                    Stop-PSFFunction -Message "Error resuming subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'! $($ErrorMsg)" -ErrorRecord $_
                 }
 
                 if($PassThru) {

@@ -26,7 +26,7 @@ function New-WEFSubscription {
         .PARAMETER Type
             The type of the subscription.
 
-        .PARAMETER Description 
+        .PARAMETER Description
             The description of the Windows Event Forwarding subscription.
 
         .PARAMETER Enabled
@@ -41,7 +41,7 @@ function New-WEFSubscription {
 
         .PARAMETER ContentFormat
             The format for the data transfered to the server.
-            Events       = Binary event data are transfered from the source computer to the destition WEF server. Localization apply on the WEF server 
+            Events       = Binary event data are transfered from the source computer to the destition WEF server. Localization apply on the WEF server
             RenderedText = Localized data from the source computer are transfered to the WEF server. (This format contains more bandwidth)
 
         .PARAMETER LogFile
@@ -54,7 +54,7 @@ function New-WEFSubscription {
         .PARAMETER Query
             The filter query for the events to collect. One or more queries must be specified.
 
-            Example: <Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select> 
+            Example: <Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select>
 
         .PARAMETER ConfigurationMode
             The timing setting for the event delivery on a subscription.
@@ -82,13 +82,13 @@ function New-WEFSubscription {
 
         .PARAMETER MaxItems
             The maximum amount of events on a delivery process.
-            This is a optional setting and not configured by default. 
+            This is a optional setting and not configured by default.
 
         .PARAMETER TransportName
             Specifies that the transport layer for the forwarded events. Can be set to "http" (default)
-            or "https", which add an additional layer of transport security. (PKI/certificates needed on the 
-            machines). 
-            In a domain environment transmit is encrypted via kerberos. The authentication is done via kerberos 
+            or "https", which add an additional layer of transport security. (PKI/certificates needed on the
+            machines).
+            In a domain environment transmit is encrypted via kerberos. The authentication is done via kerberos
             (domain) or with ntlm (workgroup). Authentication is encrypted regardless to the transport security.
             Transport security is only needed outside a domain environment for the event transmit.
 
@@ -113,12 +113,12 @@ function New-WEFSubscription {
 
         .EXAMPLE
             PS C:\> New-WEFSubscription -Name "MySubscription" -Type CollectorInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Server1"
-            
+
             Create a new CollectorInitiated subscription "MySubScription"
 
         .EXAMPLE
             PS C:\> New-WEFSubscription -Name "MySubscription" -Type SourceInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Domain computers"
-            
+
             Create a new SourceInitiated subscription "MySubScription"
 
         .NOTES
@@ -127,7 +127,7 @@ function New-WEFSubscription {
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
-    [CmdletBinding(DefaultParameterSetName = 'ComputerName', 
+    [CmdletBinding(DefaultParameterSetName = 'ComputerName',
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]
     Param(
@@ -195,7 +195,7 @@ function New-WEFSubscription {
         [ValidateNotNullOrEmpty()]
         [timespan]
         $HeartBeatInterval = "00:15:00",
-        
+
         [ValidateNotNullOrEmpty()]
         [int]
         $MaxItems,
@@ -224,7 +224,7 @@ function New-WEFSubscription {
 
     Begin {
         # If session parameter is used -> transfer it to ComputerName,
-        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block 
+        # The class "PSFComputer" from PSFramework can handle it. This simplifies the handling in the further process block
         if ($Session) { $ComputerName = $Session }
 
         $nameBound = Test-PSFParameterBinding -ParameterName Name
@@ -256,7 +256,7 @@ function New-WEFSubscription {
                     $MaxLatency = [timespan]::new(0,0,0,0,900000)
                     $HeartBeatInterval = [timespan]::new(0,0,0,0,900000)
                 }
-                "MinBandwidth" {  
+                "MinBandwidth" {
                     $MaxLatency = [timespan]::new(0,0,0,0,21600000)
                     $HeartBeatInterval = [timespan]::new(0,0,0,0,21600000)
                 }
@@ -278,13 +278,13 @@ function New-WEFSubscription {
             $ConfigurationMode = "Custom"
         }
 
-        # Optional parameters - remove variables if not specified 
+        # Optional parameters - remove variables if not specified
         if(-not (Test-PSFParameterBinding -ParameterName MaxItems)) { Remove-Variable -Name MaxItems -Force -Confirm:$false -Verbose:$false -WhatIf:$false }
         if(-not (Test-PSFParameterBinding -ParameterName Expires)) { Remove-Variable -Name Expires -Force -Confirm:$false -Verbose:$false -WhatIf:$false }
-        
     }
 
     Process {
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
@@ -301,13 +301,11 @@ function New-WEFSubscription {
             Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
             $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
             if ($service.Status -ne 'Running') {
-                Stop-PSFFunction -Message "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
-                return
+                Stop-PSFFunction -Message "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'." -EnableException $true
             }
 
-            if(-not (Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-WinEvent -ListLog $args[0] } -ArgumentList $LogFile)) {
-                Stop-PSFFunction -Message "Eventlog '$($LogFile)' not found on computer '$($computer)'. Aborting creation of subscription."
-                return
+            if(-not (Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-WinEvent -ListLog $args[0] -ErrorAction SilentlyContinue} -ArgumentList $LogFile)) {
+                Stop-PSFFunction -Message "Eventlog '$($LogFile)' not found on computer '$($computer)'. Aborting creation of subscription." -EnableException $true
             }
             #endregion Gathering prerequisites
 
@@ -349,16 +347,18 @@ function New-WEFSubscription {
 
                 if ($pscmdlet.ShouldProcess("Subscription: $($nameItem) on computer '$($computer)'", "Create")) {
                     Write-PSFMessage -Level Verbose -Message "Create subscription '$($nameItem)' on computer '$($computer)'" -Target $computer
-                    
-                    # Write XML config file in temp folder  
+                    $QuerySubscription = $true
+
+                    # Write XML config file in temp folder
                     try {
                         Write-PSFMessage -Level Verbose -Message "Create temporary config file '$($invokeParams.ArgumentList[1])' for new subscription" -Target $computer
                         $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
                             $subscriptionProperties = $args[0]
 
-                            # Create our new XML File	
+                            # Create our new XML File
                             $xmlFilePath = $env:TEMP + "\" + $args[1]
                             $XmlWriter = New-Object System.XMl.XmlTextWriter($xmlFilePath, $null)
+                            $xmlFilePath = $XmlWriter.BaseStream.Name
 
                             # Set The Formatting
                             $xmlWriter.Formatting = "Indented"
@@ -402,18 +402,18 @@ function New-WEFSubscription {
                             $xmlWriter.WriteEndElement() #Closing Locale
                             $xmlWriter.WriteElementString("LogFile", $subscriptionProperties.LogFile)
                             $xmlWriter.WriteElementString("PublisherName", "")
-                            
+
                             if($subscriptionProperties.Type -eq 'SourceInitiated') {
-                                # SourceInitiated subscription 
+                                # SourceInitiated subscription
                                 if($subscriptionProperties.SourceDomainComputer) {
-                                    # Parse every value specified, translate from name to SID 
+                                    # Parse every value specified, translate from name to SID
                                     $sddlString = "O:NSG:BAD:P"
                                     foreach ($sourceDomainComputerItem in $subscriptionProperties.SourceDomainComputer) {
                                         if($sourceDomainComputerItem -match 'S-1-5-21-(\d|-)*$') {
                                             # sourceDomainComputerItem is a SID, no need to translate
                                             $SID = $sourceDomainComputerItem
                                         } else {
-                                            # try to translate name to SID 
+                                            # try to translate name to SID
                                             try {
                                                 $SID = [System.Security.Principal.NTAccount]::new( $sourceDomainComputerItem ).Translate([System.Security.Principal.SecurityIdentifier]).Value
                                             } catch {
@@ -440,9 +440,9 @@ function New-WEFSubscription {
                                     $xmlWriter.WriteEndElement() # Closing AllowedIssuerCAList
                                     $xmlWriter.WriteStartElement("AllowedSubjectList") # Start AllowedSubjectList
                                     foreach ($SourceNonDomainDNSListItem in $subscriptionProperties.SourceNonDomainDNSList) {
-                                        $xmlWriter.WriteElementString("Subject", $SourceNonDomainDNSListItem) 
+                                        $xmlWriter.WriteElementString("Subject", $SourceNonDomainDNSListItem)
                                     }
-                                    $xmlWriter.WriteEndElement() # Closing AllowedSubjectList                                    
+                                    $xmlWriter.WriteEndElement() # Closing AllowedSubjectList
                                     $xmlWriter.WriteEndElement() # Closing AllowedSourceNonDomainComputers
                                 }
                             } else {
@@ -473,42 +473,62 @@ function New-WEFSubscription {
 
                     # Create subscription from config file in temp folder
                     try {
-                        $null = Invoke-PSFCommand @invokeParams -ScriptBlock { 
-                            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-                            . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[1] )" 2>&1 
+                        #$null = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                        $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                            try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                            $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[1] )" *>&1
+                            $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
+                            if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                         }
-                        if($ErrorReturn) { Write-Error -Message $ErrorReturn -ErrorAction Stop}    
+                        if($invokeOutput) {
+                            $ErrorReturn = $invokeOutput
+                        }
+                        if($ErrorReturn) { Write-Error -Message "" -ErrorAction Stop}
                     } catch {
-                        $ErrorReturn = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' }
-                        $ErrorMsg = [string]::Join(" ", $ErrorReturn.Exception.Message.Replace("`r`n"," "))
-                        $ErrorCode = if($ErrorMsg -like "*Error = *") { ($ErrorMsg -Split "Error = ")[1].split(".")[0] } else { 0 }
-                        if($ErrorMsg -like "Warnung: *") { $ErrorCode = "Warn1" }
+                        # Avoid query for output object at the end of the function
+                        $QuerySubscription = $false
+
+                        $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
+                        if($ErrorReturnWEC) {
+                            $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
+                        } else {
+                            $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
+                        }
+                        if($ErrorMsg -like "*Error = *") { $ErrorCode = ($ErrorMsg -Split "Error = ")[1].split(".")[0] } else { $ErrorCode = 0 }
+                        if($ErrorMsg -like "Warning: *" -or $ErrorMsg -like "Warnung: *") { $ErrorCode = "Warn1" }
+
                         switch ($ErrorCode) {
-                            "0x3ae8" { 
-                                Write-PSFMessage -Level Warning -Message "Warning recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer 
+                            "0x3ae8" {
+                                Write-PSFMessage -Level Warning -Message "Warning creating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer
                             }
                             "Warn1" {
-                                Write-PSFMessage -Level Warning -Message "Warning recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer 
+                                Write-PSFMessage -Level Warning -Message "Warning creating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer
                             }
-                            Default { Stop-PSFFunction -Message "Error creating subscription '$($nameItem)' from config file '$($invokeParams.ArgumentList[1])' on computer '$($computer)'! wecutil.exe message: $($ErrorMsg)" -Target $computer -EnableException $true -Continue }
+                            Default { Write-PSFMessage -Level Warning -Message "Error creating subscription '$($nameItem)' from config file '$($invokeParams.ArgumentList[1])' on computer '$($computer)'! wecutil.exe message: $($ErrorMsg)" -Target $computer -EnableException $true }
                         }
-                        Clear-Variable -Name ErrorReturn -Force
+                        Remove-Variable -Name ErrorReturn, ErrorReturnWEC, ErrorCode, ErrorMsg -Force -Confirm:$false -Verbose:$false -WhatIf:$false
                     }
 
                     # Cleanup the xml garbage (temp file)
                     try {
                         Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temp stuff" -Target $computer
-                        Invoke-PSFCommand @invokeParams -ScriptBlock { Remove-Item -Path "$env:TEMP\$( $args[1] )" -Force -Confirm:$false }
-                        if($ErrorReturn) { Write-Error -Message $ErrorReturn -ErrorAction Stop}
-                    } catch { 
+                        Invoke-PSFCommand @invokeParams -ScriptBlock {
+                            # xmlFilePath is known in session from the previous executed commands. Path needs to be rebuild when running in local session, maybe.
+                            if(-not $xmlFilePath) { $xmlFilePath = $env:TEMP + "\" + $args[1] }
+                            Get-ChildItem -Path $xmlFilePath | Remove-Item  -Force -Confirm:$false
+                        }
+                        if($ErrorReturn) { Write-Error -Message "" -ErrorAction Stop}
+                    } catch {
                         Stop-PSFFunction -Message "Error deleting temp files! $($ErrorReturn)" -ErrorRecord $ErrorReturn -Target $computer -EnableException $true -Continue
                     }
 
-                    try {
-                        $output = Get-WEFSubscription -Name $nameItem -ComputerName $computer -ErrorAction Stop -ErrorVariable "ErrorReturn"
-                        if($output) { $output } else { Write-Error $ErrorReturn -ErrorAction Stop}
-                    } catch {
-                        Stop-PSFFunction -Message "Error finding subscription '$($nameItem)' on computer $computer" -ErrorRecord $_ -EnableException $true
+                    if($QuerySubscription) {
+                        try {
+                            $output = Get-WEFSubscription -Name $nameItem -ComputerName $computer -ErrorAction Stop -ErrorVariable "ErrorReturn"
+                            if($output) { $output } else { Write-Error "" -ErrorAction Stop}
+                        } catch {
+                            Write-PSFMessage -Level Warning -Message "Error finding subscription '$($nameItem)' on computer $computer" -Target $computer -ErrorRecord $_ -EnableException $true
+                        }
                     }
                 }
             }
