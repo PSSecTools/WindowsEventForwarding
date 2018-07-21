@@ -10,11 +10,106 @@ function New-WEFSubscription {
             The computer(s) to connect to.
             Supports PSSession objects, will reuse sessions.
 
+            Aliases for the parameter: "host", "hostname", "Computer", "DNSHostName"
+
+        .PARAMETER Session
+            The PSSession object(s) to connect to.
+
+        .PARAMETER Credential
+            A credential object used for the connection to remote computer(s) or session(s).
+
         .PARAMETER Name
             Name of the subscription to filter by.
 
+            Aliases for the parameter: "DisplayName", "SubscriptionID", "Idendity"
+
         .PARAMETER Type
             The type of the subscription.
+
+        .PARAMETER Description 
+            The description of the Windows Event Forwarding subscription.
+
+        .PARAMETER Enabled
+            Status of the subscription after it is created.
+
+            Aliases for the parameter: "Enable", "Status"
+
+        .PARAMETER ReadExistingEvents
+            Specifies that the subscription gathers only new events when it applies on a source.
+            True  = All existing events on the source computer will be gathered when the subscription apply.
+            False = Only newly created events are gathered after the subscription applies.
+
+        .PARAMETER ContentFormat
+            The format for the data transfered to the server.
+            Events       = Binary event data are transfered from the source computer to the destition WEF server. Localization apply on the WEF server 
+            RenderedText = Localized data from the source computer are transfered to the WEF server. (This format contains more bandwidth)
+
+        .PARAMETER LogFile
+            The name of the Windows Event Log where the collected events are stored on the WEF server.
+
+        .PARAMETER Locale
+            The localization format for the collected events.
+            This setting only apply, when ContentFormat is set to "RenderedText"
+
+        .PARAMETER Query
+            The filter query for the events to collect. One or more queries must be specified.
+
+            Example: <Select Path="System">*[System[(Level=1  or Level=2 or Level=3)]]</Select> 
+
+        .PARAMETER ConfigurationMode
+            The timing setting for the event delivery on a subscription.
+            There are 4 different settings available - "Normal", "MinBandwidth", "MinLatency", "Custom".
+            "Normal"       = MaxLatency and HeartBeatInterval is "00:15:00"
+            "MinBandwidth" = MaxLatency and HeartBeatInterval is "06:00:00"
+            "MinLatency"   = MaxLatency is "00:00:30" and HeartBeatInterval is "01:00:00"
+            "Custom"       = Parameters MaxLatency and HeartBeatInterval has to be specified individually.
+
+            Default is "Normal"
+
+        .PARAMETER MaxLatency
+            The timespan for the max. latency when transmitting events.
+            MaxLatency is relevent when parmeter ConfigurationMode is set to "Custom". Otherwise the MaxLatency
+            will be ignored.
+
+            Default is "00:15:00"
+
+        .PARAMETER HeartBeatInterval
+            The timespan for the keep alive signal from the source computer to the WEF server
+            MaxLatency is relevent when parmeter ConfigurationMode is set to "Custom". Otherwise the HeartBeatInterval
+            will be ignored.
+
+            Default is "00:15:00"
+
+        .PARAMETER MaxItems
+            The maximum amount of events on a delivery process.
+            This is a optional setting and not configured by default. 
+
+        .PARAMETER TransportName
+            Specifies that the transport layer for the forwarded events. Can be set to "http" (default)
+            or "https", which add an additional layer of transport security. (PKI/certificates needed on the 
+            machines). 
+            In a domain environment transmit is encrypted via kerberos. The authentication is done via kerberos 
+            (domain) or with ntlm (workgroup). Authentication is encrypted regardless to the transport security.
+            Transport security is only needed outside a domain environment for the event transmit.
+
+            Default is http.
+
+        .PARAMETER SourceDomainComputer
+            The name(s) or SID(s) for the group(s) or computer(s) the subscription should apply.
+            This Parameter apply the both subscription type, "SourceInitiated" and "CollectorInitiated".
+
+            Aliases for the parameter: "SourceComputer"
+
+        .PARAMETER SourceNonDomainDNSList
+            DNS name patterns for WEF clients that should aplly to the subscription.
+            This Parameter apply only to a "SourceInitiated" subscription.
+
+        .PARAMETER SourceNonDomainIssuerCAThumbprint
+            Certificate thumbprint(s) of trusted certifcates of a WEF collector/server.
+            This Parameter apply only to a "SourceInitiated" subscription.
+
+        .PARAMETER Expires
+            The date when the created subscription will expire.
 
         .EXAMPLE
             PS C:\> New-WEFSubscription -Name "MySubscription" -Type CollectorInitiated -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Server1"
@@ -88,6 +183,11 @@ function New-WEFSubscription {
         [string[]]
         $Query,
 
+        [ValidateSet("Normal", "MinBandwidth", "MinLatency", "Custom")]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $ConfigurationMode = "Normal",
+
         [ValidateNotNullOrEmpty()]
         [timespan]
         $MaxLatency = "00:15:00",
@@ -105,6 +205,7 @@ function New-WEFSubscription {
         $TransportName = "HTTP",
 
         [ValidateNotNull()]
+        [Alias("SourceComputer")]
         [String[]]
         $SourceDomainComputer,
 
@@ -143,6 +244,28 @@ function New-WEFSubscription {
         }
         if( $Type -eq "CollectorInitiated" -and (-not (Test-PSFParameterBinding -ParameterName SourceDomainComputer))) {
             Stop-PSFFunction -Message "Missing parameter 'SourceDomainComputer' for CollectorInitiated subscription(s)." -EnableException $true
+        }
+
+        if( ((Test-PSFParameterBinding -ParameterName ConfigurationMode) -and $ConfigurationMode -notlike "Custom") -and (Test-PSFParameterBinding -ParameterName HeartBeatInterval, MaxLatency) ) {
+            # default ConfigurationMode specified as parameter and MaxLatency/HeartBeatInterval also specified
+            # --> MaxLatency & HeartBeatInterval will be ignored
+            $BoundParameterName = [string]::Join(" and ", ((Get-PSCallStack)[0].InvocationInfo.BoundParameters.Keys).where({$_ -in "MaxLatency","HeartBeatInterval"}))
+            Write-PSFMessage -Level Important -Message "ConfigurationMode '$($ConfigurationMode)' specified together with $( $BoundParameterName ). The ConfigurationMode will overwrite the values from parameters $($BoundParameterName)."
+            switch ($ConfigurationMode) {
+                "Normal" {
+                    $MaxLatency = [timespan]::new(0,0,0,0,900000)
+                    $HeartBeatInterval = [timespan]::new(0,0,0,0,900000)
+                }
+                "MinBandwidth" {  
+                    $MaxLatency = [timespan]::new(0,0,0,0,21600000)
+                    $HeartBeatInterval = [timespan]::new(0,0,0,0,21600000)
+                }
+                "MinLatency" {
+                    $MaxLatency = [timespan]::new(0,0,0,0,30000)
+                    $HeartBeatInterval = [timespan]::new(0,0,0,0,3600000)
+                }
+                Default {}
+            }
         }
 
         if( $MaxLatency.TotalMilliseconds -eq 900000 -and $HeartBeatInterval.TotalMilliseconds -eq 900000 ) {
