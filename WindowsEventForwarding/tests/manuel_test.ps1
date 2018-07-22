@@ -48,3 +48,8 @@ Get-WEFSubscription | Out-GridView -OutputMode Multiple | Set-WEFSubscription -S
 Get-WEFSubscription -Name $Name | Resume-WEFSubscription -PassThru
 Get-WEFSubscription -Name $Name | Remove-WEFSubscription -Force
 
+
+
+# Proxy commands
+$MetaData = New-Object System.Management.Automation.CommandMetaData (Get-Command  Set-WEFSubscription)
+[System.Management.Automation.ProxyCommand]::Create($MetaData) | Set-Clipboard
