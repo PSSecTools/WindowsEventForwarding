@@ -34,7 +34,7 @@ function Resume-WEFSubscription {
         .EXAMPLE
             PS C:\> Resume-WEFSubscription -Name "Subscription1"
 
-            Resume the subscription "Subscription1" to "Subscription1New"
+            Resume the subscription "Subscription1"
 
         .EXAMPLE
             PS C:\> Get-WEFSubscription -Name "Subscription1" | Resume-WEFSubscription
