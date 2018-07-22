@@ -3,7 +3,7 @@
 	ModuleToProcess = 'WindowsEventForwarding.psm1'
 
 	# Version number of this module.
-	ModuleVersion = '0.9.1.0'
+	ModuleVersion = '0.9.2.0'
 
 	# ID used to uniquely identify this module
 	GUID = '5a870944-db6c-4dc2-90f1-738a8c3a07f4'
@@ -70,6 +70,8 @@ All cmdlets are build with
 
 	# Functions to export from this module
 	FunctionsToExport  = @(
+		'Disable-WEFSubscription'
+		'Enable-WEFSubscription'
 		'Get-WEFSubscription'
 		'Get-WEFSubscriptionRuntimestatus'
 		'New-WEFCollectorInitiatedSubscription'
