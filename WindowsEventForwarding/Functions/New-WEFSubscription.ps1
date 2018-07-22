@@ -346,7 +346,7 @@ function New-WEFSubscription {
                 if ($Credential) { $invokeParams.Add("Credential", $Credential)}
 
                 if ($pscmdlet.ShouldProcess("Subscription: $($nameItem) on computer '$($computer)'", "Create")) {
-                    Write-PSFMessage -Level Verbose -Message "Create subscription '$($nameItem)' on computer '$($computer)'" -Target $computer
+                    Write-PSFMessage -Level Verbose -Message "Start creating subscription '$($nameItem)' on computer '$($computer)'" -Target $computer
                     $QuerySubscription = $true
 
                     # Write XML config file in temp folder
@@ -473,7 +473,7 @@ function New-WEFSubscription {
 
                     # Create subscription from config file in temp folder
                     try {
-                        #$null = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                        Write-PSFMessage -Level Verbose -Message "Create-subscription with wecutil.exe from temporary config file." -Target $computer
                         $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
                             try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
                             $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[1] )" *>&1
@@ -490,28 +490,39 @@ function New-WEFSubscription {
 
                         $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
                         if($ErrorReturnWEC) {
+                            # this happens when run in local runspace
                             $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
                         } else {
+                            # this happens when run in remote runspace
                             $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                         }
-                        if($ErrorMsg -like "*Error = *") { $ErrorCode = ($ErrorMsg -Split "Error = ")[1].split(".")[0] } else { $ErrorCode = 0 }
-                        if($ErrorMsg -like "Warning: *" -or $ErrorMsg -like "Warnung: *") { $ErrorCode = "Warn1" }
+
+                        switch ($ErrorMsg) {
+                            "*Error = *" {
+                                $ErrorCode = ($ErrorMsg -Split "Error = ")[1].split(".")[0]
+                            }
+                            { $_ -like "Warning: *" -or $_ -like "Warnung: *" } {
+                                $ErrorCode = "Warn1"
+                            }
+                            Default { $ErrorCode = 0 }
+                        }
 
                         switch ($ErrorCode) {
                             "0x3ae8" {
+                                # The subscription is saved successfully, but it can't be activated at this time. Use retry-subscription command to retry the subscription. If subscription is running, you can also use get-subscriptionruntimestatus command to get extended error status. Error = 0x3ae8. The subscription fails to activate.
                                 Write-PSFMessage -Level Warning -Message "Warning creating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer
                             }
                             "Warn1" {
                                 Write-PSFMessage -Level Warning -Message "Warning creating subscription! wecutil.exe message: $($ErrorMsg)" -Target $computer
                             }
-                            Default { Write-PSFMessage -Level Warning -Message "Error creating subscription '$($nameItem)' from config file '$($invokeParams.ArgumentList[1])' on computer '$($computer)'! wecutil.exe message: $($ErrorMsg)" -Target $computer -EnableException $true }
+                            Default { Write-PSFMessage -Level Warning -Message "Error creating subscription '$($nameItem)' on computer '$($computer)'! wecutil.exe message: $($ErrorMsg)(config file: $($invokeParams.ArgumentList[1]))" -Target $computer -EnableException $true }
                         }
                         Remove-Variable -Name ErrorReturn, ErrorReturnWEC, ErrorCode, ErrorMsg -Force -Confirm:$false -Verbose:$false -WhatIf:$false
                     }
 
                     # Cleanup the xml garbage (temp file)
                     try {
-                        Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temp stuff" -Target $computer
+                        Write-PSFMessage -Level Verbose -Message "Operation done. Going to delete temp stuff" -Target $computer
                         Invoke-PSFCommand @invokeParams -ScriptBlock {
                             # xmlFilePath is known in session from the previous executed commands. Path needs to be rebuild when running in local session, maybe.
                             if(-not $xmlFilePath) { $xmlFilePath = $env:TEMP + "\" + $args[1] }
@@ -524,6 +535,7 @@ function New-WEFSubscription {
 
                     if($QuerySubscription) {
                         try {
+                            Write-PSFMessage -Level Verbose -Message "Query newly created subscription for output" -Target $computer
                             $output = Get-WEFSubscription -Name $nameItem -ComputerName $computer -ErrorAction Stop -ErrorVariable "ErrorReturn"
                             if($output) { $output } else { Write-Error "" -ErrorAction Stop}
                         } catch {

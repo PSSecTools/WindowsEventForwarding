@@ -465,7 +465,7 @@ function Set-WEFSubscription {
             #region Change subscription in system
             # Done by creating temporary XML file from subscription in memory, deleting the old subscription, and recreate it from temporary xml file
             if ($pscmdlet.ShouldProcess("Subscription: $subscriptionNameOld", "Set properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)'.")) {
-                Write-PSFMessage -Level Verbose -Message "Set properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)' in subscription $($subscription.Name)" -Target $subscription.ComputerName
+                Write-PSFMessage -Level Verbose -Message "Start setting properties '$( [String]::Join(', ', $propertyNameChangeList) )' on '$($subscription.ComputerName)' in subscription '$($subscription.Name)'" -Target $subscription.ComputerName
 
                 $invokeParams = @{
                     ComputerName  = $subscription.ComputerName
@@ -481,20 +481,24 @@ function Set-WEFSubscription {
 
                 # Create temp file name
                 try {
+                    Write-PSFMessage -Level Verbose -Message "Create temporary config file '$($invokeParams.ArgumentList[2])' for subscription to be changed." -Target $subscription.ComputerName
                     Invoke-PSFCommand @invokeParams -ScriptBlock { Set-Content -Path "$env:TEMP\$( $args[2] )" -Value $args[1] -Force -ErrorAction Stop } #tempFileName , xmlcontent
                 } catch {
-                    throw "Error creating temp file for subscription!"
+                    Stop-PSFFunction -Message "Error creating temp file for subscription!" -ErrorRecord $_ -EnableException $true
                 }
 
                 # Delete existing subscription. execute wecutil to delete subscription with redirecting error output
                 try {
-                    $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                    Write-PSFMessage -Level Verbose -Message "Delete existing subscription with wecutil.exe." -Target $subscription.ComputerName
+                    $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
                         try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
-                        . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" *>&1
+                        $output = . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" *>&1
+                        $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
+                        if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                     }
                     if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
                 } catch {
-                    Write-PSFMessage -Level Verbose -Message "this should not happen - this will be an unexpected behaviour" -Target $subscription.ComputerName
+                    Write-PSFMessage -Level Verbose -Message "This should not happen - unexpected behaviour!" -Target $subscription.ComputerName
 
                     $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
                     if($ErrorReturnWEC) {
@@ -503,28 +507,53 @@ function Set-WEFSubscription {
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                     }
 
-                    Stop-PSFFunction -Message "Error deleting existing subscription before recreating it! $($ErrorMsg)" -ErrorRecord $_
+                    Stop-PSFFunction -Message "Error deleting existing subscription before recreating it! $($ErrorMsg)" -ErrorRecord $_ -EnableException $true
                 }
 
                 # Recreate changed subscription. execute wecutil to recreate changed subscription with redirecting error output
+                $ErrorReturn = $null
                 try {
-                    $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
+                    Write-PSFMessage -Level Verbose -Message "Recreate subscription with wecutil.exe from temporary config file." -Target $subscription.ComputerName
+                    $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
                         try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
-                        . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[2] )" *>&1
+                        $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[2] )" *>&1
+                        $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
+                        if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                     }
+                    if($invokeOutput) { $ErrorReturn += $invokeOutput }
                     if($ErrorReturn) { Write-Error -Message "" -ErrorAction Stop}
                 } catch {
                     $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
                     if($ErrorReturnWEC) {
+                        # this happens when run in local runspace
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
                     } else {
+                        # this happens when run in remote runspace
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                     }
-                    if($ErrorMsg -like "*Error = *") { $ErrorCode = ($ErrorMsg -Split "Error = ")[1].split(".")[0] } else { $ErrorCode = 0 }
+
+                    switch ($ErrorMsg) {
+                        "*Error = *" {
+                            $ErrorCode = ($ErrorMsg -Split "Error = ")[1].split(".")[0]
+                        }
+                        { ($_ -like "Warning: *") -or ($_ -like "Warnung: *") } {
+                            $ErrorCode = "Warn1"
+                        }
+                        { $_ -like "Warning: Configuration mode for the subscription is not Custom.*"} {
+                            $ErrorCode = "Warn2"
+                        }
+                        Default { $ErrorCode = 0 }
+                    }
 
                     switch ($ErrorCode) {
-                        "0x3ae8" {
+                        {$_ -like "0x3ae8" -or $_ -like "Warn1"} {
+                            # 0x3ae8 = The subscription is saved successfully, but it can't be activated at this time. Use retry-subscription command to retry the subscription. If subscription is running, you can also use get-subscriptionruntimestatus command to get extended error status. Error = 0x3ae8. The subscription fails to activate.
+                            # Warn1  = wecutil only throw a warning, which means, this is not a critical thing. No Exception needed.
                             Write-PSFMessage -Level Warning -Message "Warning recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName
+                        }
+                        "Warn2" {
+                            # Warn2  = Warning: Configuration mode for the subscription is not Custom. Delivery properties are not customizable for such mode. As a result, Delivery node from the provided configuration file will be ignored.
+                            Write-PSFMessage -Level Verbose -Message "Noncritical warning on recreating of the subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName
                         }
                         Default { Write-PSFMessage -Level Warning -Message "Error recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName -EnableException $true}
                     }
@@ -533,10 +562,10 @@ function Set-WEFSubscription {
 
                 # Cleanup the xml garbage (temp file)
                 if(-not $result) {
-                    Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temp stuff" -Target $subscription.ComputerName
+                    Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temporary config file" -Target $subscription.ComputerName
                     Invoke-PSFCommand @invokeParams -ScriptBlock { Get-ChildItem -Path "$env:TEMP\$( $args[2] )" | Remove-Item -Force -Confirm:$false }
                 } else {
-                    Write-PSFMessage -Level Critical -Message "Error deleting temp files! $($ErrorReturn)" -Target $subscription.ComputerName
+                    Write-PSFMessage -Level Warning -Message "Error deleting temp files! $($ErrorReturn)" -Target $subscription.ComputerName -EnableException $true
                 }
 
                 if($PassThru) {
