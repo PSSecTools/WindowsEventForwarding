@@ -392,7 +392,7 @@ function New-WEFSubscription {
                             }
                             if($subscriptionProperties.Expires) { $xmlWriter.WriteElementString("Expires", (Get-Date -Date $subscriptionProperties.Expires -Format s)) }
                             $xmlWriter.WriteStartElement("Query") # Start Query
-                            $xmlWriter.WriteCData("<QueryList> <Query Id='0'>`r`t$( [string]::Join("`r`t", $subscriptionProperties.Query) )`r</Query></QueryList>")
+                            $xmlWriter.WriteCData("<QueryList> <Query Id='0'>`r`t$( [string]::Join("`r`t", ($subscriptionProperties.Query | ForEach-Object { $_ }) ) )`r</Query></QueryList>")
                             $xmlWriter.WriteEndElement() # Closing Query
                             $xmlWriter.WriteElementString("ReadExistingEvents", [bool]::Parse($subscriptionProperties.ReadExistingEvents))
                             $xmlWriter.WriteElementString("TransportName", $subscriptionProperties.TransportName)

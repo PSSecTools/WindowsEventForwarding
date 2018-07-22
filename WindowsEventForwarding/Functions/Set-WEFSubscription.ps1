@@ -553,7 +553,7 @@ function Set-WEFSubscription {
                         }
                         "Warn2" {
                             # Warn2  = Warning: Configuration mode for the subscription is not Custom. Delivery properties are not customizable for such mode. As a result, Delivery node from the provided configuration file will be ignored.
-                            Write-PSFMessage -Level Verbose -Message "Noncritical warning on recreating of the subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName
+                            Write-PSFMessage -Level VeryVerbose -Message "Noncritical warning on recreating of the subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName
                         }
                         Default { Write-PSFMessage -Level Warning -Message "Error recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName -EnableException $true}
                     }
