@@ -148,13 +148,6 @@
             </ScriptProperty>
 
             <ScriptProperty>
-                <Name>PSComputerName</Name>
-                <GetScriptBlock>
-                    if($this.PSSession) { $this.PSSession.ComputerName.ToUpper() }
-                </GetScriptBlock>
-            </ScriptProperty>
-
-            <ScriptProperty>
                 <Name>ComputerName</Name>
                 <GetScriptBlock>
                     if($this.PSComputerName) {
@@ -184,7 +177,7 @@
 
 
     <Type>
-        <Name>WEF.Subscription.SourceInitiated</Name>
+        <Name>WEF.SubscriptionSourceInitiated</Name>
         <Members>
             <ScriptProperty>
                 <Name>AllowedSourceDomainComputersSDDLString</Name>
@@ -230,7 +223,7 @@
 
 
     <Type>
-        <Name>WEF.Subscription.CollectorInitiated</Name>
+        <Name>WEF.SubscriptionCollectorInitiated</Name>
         <Members>
             <ScriptProperty>
                 <Name>CredentialsType</Name>
