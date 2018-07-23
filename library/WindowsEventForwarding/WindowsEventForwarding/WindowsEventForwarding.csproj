@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net452</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputPath>..\..\..\WindowsEventForwarding\bin</OutputPath>
-    <DocumentationFile>..\..\..\WindowsEventForwarding\bin\netstandard2.0\WindowsEventForwarding.xml</DocumentationFile>
+    <DocumentationFile>..\..\..\WindowsEventForwarding\bin\WindowsEventForwarding.xml</DocumentationFile>
   </PropertyGroup>
   
   <PropertyGroup>
