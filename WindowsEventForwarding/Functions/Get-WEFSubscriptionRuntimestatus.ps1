@@ -154,9 +154,6 @@ function Get-WEFSubscriptionRuntimestatus {
                 }
                 if($SubscriptionRuntimeStatus -ne 'Active' ) {
                     $outputObject = [PSCustomObject]$hashTableSubscriptionStatus
-                    $outputObject.pstypenames.Insert(0,$BaseType)
-                    $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
-                    $outputObject
                 } else {
                     $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '\t{2}(?<SourceId>\S*)\n(?<SourceIdProperties>(\t{3}.*(\n|$))*)'
                     if($matchEventSources) {
@@ -182,12 +179,13 @@ function Get-WEFSubscriptionRuntimestatus {
                             $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
                         }
                         $outputObject = [PSCustomObject]$hashTableEventSources
-                        $outputObject.pstypenames.Insert(0,$BaseType)
-                        $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
-                        $outputObject
                     }
                 }
-            } else {
+                $outputObject.pstypenames.Insert(0,$BaseType)
+                $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
+                $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus$($SubscriptionRuntimeStatus)")
+                $outputObject
+        } else {
                 $message = "Warning! Can't retrieve runtimestatus for subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'"
                 Write-PSFMessage -Level Warning -Message $message -Target $subscription.ComputerName -EnableException $true
             }
