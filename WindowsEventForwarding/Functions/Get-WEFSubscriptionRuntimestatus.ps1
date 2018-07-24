@@ -139,7 +139,7 @@ function Get-WEFSubscriptionRuntimestatus {
             }
 
             # matching wecutil output and compiling output object
-            if([string]::Join('', $invokeOutput) -match '(^Subscription: (?<SubscriptionId>\S*)\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\tLastError: (?<SubscriptionLastError>\S*))(\tEventSources:(?<SubscriptionEventSources>.*|\n*$)|(\tErrorMessage: (?<SubscriptionEventErrorMessage>.*|\n*))\tErrorTime: (?<SubscriptionEventsErrorTime>.*|\n*$)|$)') {
+            if([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>\S*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
                 $SubscriptionRuntimeStatus = $Matches['SubscriptionRuntimeStatus']
                 switch ($SubscriptionRuntimeStatus) {
                     'Active'   { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError", "SubscriptionEventSources" }
@@ -157,14 +157,17 @@ function Get-WEFSubscriptionRuntimestatus {
                     $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
                     $outputObject
                 } else {
-                    $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '(\t{2}(?<SourceId>\S*)\t{3})(RunTimeStatus: (?<SourceRuntimeStatus>\S*)(\t{3})LastError: )(?<SourceLastError>\S*)(\s{3}LastHeartbeatTime: )(?<SourceLastHeartbeat>\S*)'
+                    $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '\t{2}(?<SourceId>\S*)\n(?<SourceIdProperties>(\t{3}.*(\n|$))*)'
                     foreach($eventSource in $matchEventSources.Matches) {
+                        $eventSourceProperties = (Select-String -InputObject $eventSource.Groups['SourceIdProperties'].Value -AllMatches -Pattern '\t{3}(?<SourcePropertyKey>\S*): (?<SourcePropertyValue>(.*))').Matches
+
                         $hashTableEventSources = [ordered]@{}
                         foreach($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
                             $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
                         }
-                        foreach($EventSourceItem in ($EventSource.groups | Where-Object name -like "source*")) {
-                            $hashTableEventSources.Add($EventSourceItem.Name, $EventSourceItem.Value)
+                        $hashTableEventSources.Add("SourceId", $eventSource.Groups['SourceId'].Value)
+                        foreach($eventSourceProperty in $eventSourceProperties) {
+                            $hashTableEventSources.Add("Source$($eventSourceProperty.Groups['SourcePropertyKey'].Value)", $eventSourceProperty.Groups['SourcePropertyValue'].Value)
                         }
                         $outputObject = [PSCustomObject]$hashTableEventSources
                         $outputObject.pstypenames.Insert(0,$BaseType)
