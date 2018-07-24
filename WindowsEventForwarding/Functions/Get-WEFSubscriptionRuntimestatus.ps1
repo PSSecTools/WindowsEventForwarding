@@ -141,12 +141,13 @@ function Get-WEFSubscriptionRuntimestatus {
             # matching wecutil output and compiling output object
             if([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>\S*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
                 $SubscriptionRuntimeStatus = $Matches['SubscriptionRuntimeStatus']
-                switch ($SubscriptionRuntimeStatus) {
-                    'Active'   { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError", "SubscriptionEventSources" }
-                    'Inactive' { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError", "SubscriptionErrorMessage", "SubscriptionErrorTime" }
-                    'Disabled' { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError" }
-                    Default { Write-PSFMessage -Level Warning -Message "Unkown runtimestatus found: $($Matches['SubscriptionRuntimeStatus'])" -EnableException $_ }
-                }
+                $keys = $Matches.keys | Where-Object { $_ -like "Subscription*" }
+                #switch ($SubscriptionRuntimeStatus) {
+                #    'Active'   { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError", "SubscriptionEventSources" }
+                #    'Inactive' { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError", "SubscriptionErrorMessage", "SubscriptionErrorTime" }
+                #    'Disabled' { $keys = "SubscriptionId", "SubscriptionRuntimeStatus", "SubscriptionLastError" }
+                #    Default { Write-PSFMessage -Level Warning -Message "Unkown runtimestatus found: $($Matches['SubscriptionRuntimeStatus'])" -EnableException $_ }
+                #}
                 $hashTableSubscriptionStatus = [ordered]@{}
                 foreach($key in $keys) {
                     $hashTableSubscriptionStatus.Add($key, $Matches[$key])
@@ -158,16 +159,27 @@ function Get-WEFSubscriptionRuntimestatus {
                     $outputObject
                 } else {
                     $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '\t{2}(?<SourceId>\S*)\n(?<SourceIdProperties>(\t{3}.*(\n|$))*)'
-                    foreach($eventSource in $matchEventSources.Matches) {
-                        $eventSourceProperties = (Select-String -InputObject $eventSource.Groups['SourceIdProperties'].Value -AllMatches -Pattern '\t{3}(?<SourcePropertyKey>\S*): (?<SourcePropertyValue>(.*))').Matches
+                    if($matchEventSources) {
+                        foreach($eventSource in $matchEventSources.Matches) {
+                            $eventSourceProperties = (Select-String -InputObject $eventSource.Groups['SourceIdProperties'].Value -AllMatches -Pattern '\t{3}(?<SourcePropertyKey>\S*): (?<SourcePropertyValue>(.*))').Matches
 
+                            $hashTableEventSources = [ordered]@{}
+                            foreach($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
+                                $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
+                            }
+                            $hashTableEventSources.Add("SourceId", $eventSource.Groups['SourceId'].Value)
+                            foreach($eventSourceProperty in $eventSourceProperties) {
+                                $hashTableEventSources.Add("Source$($eventSourceProperty.Groups['SourcePropertyKey'].Value)", $eventSourceProperty.Groups['SourcePropertyValue'].Value)
+                            }
+                            $outputObject = [PSCustomObject]$hashTableEventSources
+                            $outputObject.pstypenames.Insert(0,$BaseType)
+                            $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
+                            $outputObject
+                        }
+                    } else {
                         $hashTableEventSources = [ordered]@{}
                         foreach($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
                             $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
-                        }
-                        $hashTableEventSources.Add("SourceId", $eventSource.Groups['SourceId'].Value)
-                        foreach($eventSourceProperty in $eventSourceProperties) {
-                            $hashTableEventSources.Add("Source$($eventSourceProperty.Groups['SourcePropertyKey'].Value)", $eventSourceProperty.Groups['SourcePropertyValue'].Value)
                         }
                         $outputObject = [PSCustomObject]$hashTableEventSources
                         $outputObject.pstypenames.Insert(0,$BaseType)
@@ -178,7 +190,7 @@ function Get-WEFSubscriptionRuntimestatus {
             } else {
                 $message = "Warning! Can't retrieve runtimestatus for subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'"
                 Write-PSFMessage -Level Warning -Message $message -Target $subscription.ComputerName -EnableException $true
-           }
+            }
             #endregion  query status information on subscription from system
         }
     }
