@@ -297,14 +297,20 @@ function New-WEFSubscription {
             #region Gathering prerequisites
             Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
 
+            $paramInvokeCmd = @{
+                ComputerName = $computer
+                ErrorAction  = "Stop"
+            }
+            if ($Credential) { $paramInvokeCmd.Add("Credential", $Credential) }
+
             # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
             Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
-            $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
+            $service = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { Get-Service -Name "wecsvc" }
             if ($service.Status -ne 'Running') {
                 Stop-PSFFunction -Message "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'." -EnableException $true
             }
 
-            if(-not (Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-WinEvent -ListLog $args[0] -ErrorAction SilentlyContinue} -ArgumentList $LogFile)) {
+            if(-not (Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { Get-WinEvent -ListLog $args[0] -ErrorAction SilentlyContinue} -ArgumentList $LogFile)) {
                 Stop-PSFFunction -Message "Eventlog '$($LogFile)' not found on computer '$($computer)'. Aborting creation of subscription." -EnableException $true
             }
             #endregion Gathering prerequisites
