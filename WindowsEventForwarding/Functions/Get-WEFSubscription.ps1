@@ -157,10 +157,8 @@ function Get-WEFSubscription {
 
             # Get a list of names for all subscriptions available on the system
             Write-PSFMessage -Level Debug -Message "Enumerating subscriptions on $($computer)" -Target $computer
-            $subscriptionEnumeration = Invoke-PSFCommand @$paramInvokeCmd -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" }
+            $subscriptionEnumeration = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" }
             Write-PSFMessage -Level Verbose -Message "Found $($subscriptionEnumeration.count) subscription(s) on $($computer)" -Target $computer
-
-            Remove-Variable -Name paramInvokeCmd -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
 
             # If parameter name is not specified - query all available subscrptions
             if (-not $Name) {
@@ -180,7 +178,7 @@ function Get-WEFSubscription {
                     $subscriptions = @()
                     [array]$subscriptions = foreach ($subscriptionItemToQuery in $subscriptionItemsToQuery) {
                         Write-PSFMessage -Level Verbose -Message "Query subscription '$($subscriptionItemToQuery)' on $($computer)" -Target $computer
-                        [xml]$result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { . "$env:windir\system32\wecutil.exe" "get-subscription" $args[0] "/format:xml" } -ErrorAction Stop -ArgumentList $subscriptionItemToQuery
+                        [xml]$result = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { . "$env:windir\system32\wecutil.exe" "get-subscription" $args[0] "/format:xml" } -ArgumentList $subscriptionItemToQuery
 
                         # Apply filter - if specified in parameters
                         if ($Type -and ($Type -ne $result.Subscription.SubscriptionType)) { continue }
@@ -215,6 +213,8 @@ function Get-WEFSubscription {
                 }
             }
             #endregion Processing Events
+        
+            Remove-Variable -Name paramInvokeCmd -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
         }
     }
 
