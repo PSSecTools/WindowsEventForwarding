@@ -128,6 +128,7 @@ function Get-WEFSubscription {
     }
 
     Process {
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
@@ -140,9 +141,15 @@ function Get-WEFSubscription {
             #region Connecting and gathering prerequisites
             Write-PSFMessage -Level VeryVerbose -Message "Processing $computer" -Target $computer
 
+            $paramInvokeCmd = @{
+                ComputerName = $computer
+                ErrorAction  = "Stop"
+            }
+            if ($Credential) { $paramInvokeCmd.Add("Credential", $Credential) }
+
             # Check service 'Windows Event Collector' - without this, there are not subscriptions possible
             Write-PSFMessage -Level Verbose -Message "Checking service 'Windows Event Collector'" -Target $computer
-            $service = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { Get-Service -Name "wecsvc" } -ErrorAction Stop
+            $service = Invoke-PSFCommand @paramInvokeCmd -ScriptBlock { Get-Service -Name "wecsvc" }
             if ($service.Status -ne 'Running') {
                 Stop-PSFFunction -Message "Working with eventlog subscriptions requires  the 'Windows Event Collector' service in running state.  Please ensure that the service is set up correctly or use 'wecutil.exe qc'."
                 return
@@ -150,8 +157,10 @@ function Get-WEFSubscription {
 
             # Get a list of names for all subscriptions available on the system
             Write-PSFMessage -Level Debug -Message "Enumerating subscriptions on $($computer)" -Target $computer
-            $subscriptionEnumeration = Invoke-PSFCommand -ComputerName $computer -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" } -ErrorAction Stop
+            $subscriptionEnumeration = Invoke-PSFCommand @$paramInvokeCmd -ScriptBlock { . "$env:windir\system32\wecutil.exe" "enum-subscription" }
             Write-PSFMessage -Level Verbose -Message "Found $($subscriptionEnumeration.count) subscription(s) on $($computer)" -Target $computer
+
+            Remove-Variable -Name paramInvokeCmd -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
 
             # If parameter name is not specified - query all available subscrptions
             if (-not $Name) {
@@ -182,7 +191,7 @@ function Get-WEFSubscription {
                         $result
 
                         # Clean up the mess
-                        Clear-Variable -Name result -Force -Confirm:$false -Verbose:$false
+                        Clear-Variable -Name result -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                     }
                 }
 

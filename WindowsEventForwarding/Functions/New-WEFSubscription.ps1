@@ -284,7 +284,7 @@ function New-WEFSubscription {
     }
 
     Process {
-        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping

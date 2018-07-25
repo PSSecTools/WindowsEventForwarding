@@ -288,7 +288,7 @@
             </ScriptProperty>
         </Members>
     </Type>
-    
+
     <Type>
         <Name>WEF.SubscriptionRuntimeStatus_inprogress</Name>
         <Members>

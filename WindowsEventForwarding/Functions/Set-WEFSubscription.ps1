@@ -174,7 +174,7 @@ function Set-WEFSubscription {
         [string]
         $LogFile,
 
-        [ValidateSet("en-US", "de-DE", "fr-FR", "es-ES", "nl-NL","it-IT","af-ZA","cs-CZ","en-GB","en-NZ","en-TT","es-PR","ko-KR","sk-SK","zh-CN","zh-HK")]
+        [ValidateSet("en-US", "de-DE", "fr-FR", "es-ES", "nl-NL", "it-IT", "af-ZA", "cs-CZ", "en-GB", "en-NZ", "en-TT", "es-PR", "ko-KR", "sk-SK", "zh-CN", "zh-HK")]
         [string]
         $Locale,
 
@@ -225,20 +225,29 @@ function Set-WEFSubscription {
     }
 
     Process {
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
-        if($PsCmdlet.ParameterSetName -ne "InputObject") {
+        if ($PsCmdlet.ParameterSetName -ne "InputObject") {
             # when not inputobject --> query for existing object to modify
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
             try {
-                $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
-            } catch {
+                $paramGetWEFSubscription = @{
+                    Name         = $Name
+                    ComputerName = $ComputerName
+                    ErrorAction  = "Stop"
+                }
+                if ($Credential) { $paramGetWEFSubscription.Add("Credential", $Credential) }
+                $InputObject = Get-WEFSubscription @paramGetWEFSubscription
+                Remove-Variable paramGetWEFSubscription -Force -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
+            }
+            catch {
                 Stop-PSFFunction -Message "Error finding subscription '$name' on computer $computer" -ErrorRecord $_
             }
             if (-not $InputObject) {
                 $message = "Subscription $Name not found"
-                if($ComputerName) { $message = $message + " on " + $ComputerName }
+                if ($ComputerName) { $message = $message + " on " + $ComputerName }
                 Stop-PSFFunction -Message $message
             }
         }
@@ -338,7 +347,7 @@ function Set-WEFSubscription {
                     Write-PSFMessage -Level Verbose -Message "Modifying property 'MaxItems'" -Target $subscription.ComputerName
 
                     $subscription.BaseObject.Subscription.ConfigurationMode = "Custom"
-                    if(-not ($subscription.BaseObject.Subscription.Delivery.Batching.MaxItems| Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.Delivery.Batching.MaxItems| Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml = $subscription.BaseObject.Subscription.Delivery.Batching.InnerXml + '<MaxItems xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></MaxItems>'
                     }
                     $subscription.BaseObject.Subscription.Delivery.Batching.MaxItems = $MaxItems.ToString()
@@ -358,21 +367,23 @@ function Set-WEFSubscription {
 
                     # check if property "AllowedSourceDomainComputers" exist
                     $dummyProperty = '<AllowedSourceDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></AllowedSourceDomainComputers>'
-                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.AllowedSourceDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + $dummyProperty
                     }
 
                     # Parse every value specified, translate from name to SID
                     $sddlString = "O:NSG:BAD:P"
                     foreach ($sourceDomainComputerItem in $SourceDomainComputer) {
-                        if($sourceDomainComputerItem -match 'S-1-5-21-(\d|-)*$') {
+                        if ($sourceDomainComputerItem -match 'S-1-5-21-(\d|-)*$') {
                             # sourceDomainComputerItem is a SID, no need to translate
                             $SID = $sourceDomainComputerItem
-                        } else {
+                        }
+                        else {
                             # try to translate name to SID
                             try {
                                 $SID = [System.Security.Principal.NTAccount]::new( $sourceDomainComputerItem ).Translate([System.Security.Principal.SecurityIdentifier]).Value
-                            } catch {
+                            }
+                            catch {
                                 Write-PSFMessage -Level Critical -Message "Cannot convert '$sourceDomainComputerItem' to a valid SID! '$sourceDomainComputerItem' will not be included as SourceDomainComputer in subscription." -Target $subscription.ComputerName
                                 break
                             }
@@ -385,7 +396,7 @@ function Set-WEFSubscription {
                     $subscription.BaseObject.Subscription.AllowedSourceDomainComputers = $sddlString
 
                     # cleanup temporary vaiables
-                    Remove-Variable -Name dummyProperty, SID, sddlString -Force -Confirm:$false
+                    Remove-Variable -Name dummyProperty, SID, sddlString -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                 }
 
                 "SourceNonDomainDNSList" {
@@ -394,14 +405,15 @@ function Set-WEFSubscription {
 
                     # check if property "AllowedSourceNonDomainComputers" exist
                     $dummyProperty = '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><AllowedIssuerCAList><IssuerCA></IssuerCA></AllowedIssuerCAList><AllowedSubjectList><Subject></Subject></AllowedSubjectList></AllowedSourceNonDomainComputers>'
-                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + $dummyProperty
-                    } elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
+                    }
+                    elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml -replace '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></AllowedSourceNonDomainComputers>', $dummyProperty
                     }
 
                     # check if property "AllowedSubjectList" exist
-                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml = $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml + '<AllowedSubjectList xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><Subject></Subject></AllowedSubjectList>'
                     }
 
@@ -413,7 +425,7 @@ function Set-WEFSubscription {
                     $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedSubjectList.InnerXml = $xmlText
 
                     # cleanup temporary vaiables
-                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false
+                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                 }
 
                 "SourceNonDomainIssuerCAThumbprint" {
@@ -422,14 +434,15 @@ function Set-WEFSubscription {
 
                     # check if property "AllowedSourceNonDomainComputers" exist
                     $dummyProperty = '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><AllowedIssuerCAList><IssuerCA></IssuerCA></AllowedIssuerCAList><AllowedSubjectList><Subject></Subject></AllowedSubjectList></AllowedSourceNonDomainComputers>'
-                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + $dummyProperty
-                    } elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
+                    }
+                    elseif ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.pstypenames -contains "System.String") {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml -replace '<AllowedSourceNonDomainComputers xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></AllowedSourceNonDomainComputers>', $dummyProperty
                     }
 
                     # check if property "AllowedIssuerCAList" exist
-                    if(-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml = $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.InnerXml + '<AllowedIssuerCAList xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"><IssuerCA></IssuerCA></AllowedIssuerCAList>'
                     }
 
@@ -441,14 +454,14 @@ function Set-WEFSubscription {
                     $subscription.BaseObject.Subscription.AllowedSourceNonDomainComputers.AllowedIssuerCAList.InnerXml = $xmlText
 
                     # cleanup temporary vaiables
-                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false
+                    Remove-Variable -Name dummyProperty, xmlText -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                 }
 
                 "Expires" {
                     $propertyNameChangeList += "Expires"
                     Write-PSFMessage -Level Verbose -Message "Modifying property 'Expires'" -Target $subscription.ComputerName
 
-                    if(-not ($subscription.BaseObject.Subscription.Expires | Get-Member -ErrorAction SilentlyContinue)) {
+                    if (-not ($subscription.BaseObject.Subscription.Expires | Get-Member -ErrorAction SilentlyContinue)) {
                         $subscription.BaseObject.Subscription.InnerXml = $subscription.BaseObject.Subscription.InnerXml + '<Expires xmlns="http://schemas.microsoft.com/2006/03/windows/events/subscription"></Expires>'
                     }
                     $subscription.BaseObject.Subscription.Expires = ($Expires | Get-Date -Format s).ToString()
@@ -457,7 +470,7 @@ function Set-WEFSubscription {
                 Default { }
             }
 
-            if($propertyNameChangeList -contains "Locale" -and $subscription.BaseObject.Subscription.ContentFormat -ne "RenderedText") {
+            if ($propertyNameChangeList -contains "Locale" -and $subscription.BaseObject.Subscription.ContentFormat -ne "RenderedText") {
                 Write-PSFMessage -Level Important -Message "Property 'Locale' is specified, but 'ContentFormat' is not set to 'RenderedText'. Property setting done, but without effect." -Target $subscription.ComputerName
             }
             #endregion Change properties on subscription depending on given parameters (in memory operations)
@@ -477,13 +490,14 @@ function Set-WEFSubscription {
                         "WEF.$( [system.guid]::newguid().guid ).xml"
                     )
                 }
-                if($Credential) { $invokeParams.Add("Credential", $Credential)}
+                if ($Credential) { $invokeParams.Add("Credential", $Credential)}
 
                 # Create temp file name
                 try {
                     Write-PSFMessage -Level Verbose -Message "Create temporary config file '$($invokeParams.ArgumentList[2])' for subscription to be changed." -Target $subscription.ComputerName
                     Invoke-PSFCommand @invokeParams -ScriptBlock { Set-Content -Path "$env:TEMP\$( $args[2] )" -Value $args[1] -Force -ErrorAction Stop } #tempFileName , xmlcontent
-                } catch {
+                }
+                catch {
                     Stop-PSFFunction -Message "Error creating temp file for subscription!" -ErrorRecord $_ -EnableException $true
                 }
 
@@ -494,16 +508,18 @@ function Set-WEFSubscription {
                         try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
                         $output = . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" *>&1
                         $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
-                        if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
+                        if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                     }
-                    if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
-                } catch {
+                    if ($ErrorReturn) { Write-Error "" -ErrorAction Stop}
+                }
+                catch {
                     Write-PSFMessage -Level Verbose -Message "This should not happen - unexpected behaviour!" -Target $subscription.ComputerName
 
                     $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
-                    if($ErrorReturnWEC) {
-                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
-                    } else {
+                    if ($ErrorReturnWEC) {
+                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n", " ") | select-object -Unique))
+                    }
+                    else {
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                     }
 
@@ -518,16 +534,18 @@ function Set-WEFSubscription {
                         try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
                         $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[2] )" *>&1
                         $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
-                        if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
+                        if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
                     }
-                    if($invokeOutput) { $ErrorReturn += $invokeOutput }
-                    if($ErrorReturn) { Write-Error -Message "" -ErrorAction Stop}
-                } catch {
+                    if ($invokeOutput) { $ErrorReturn += $invokeOutput }
+                    if ($ErrorReturn) { Write-Error -Message "" -ErrorAction Stop}
+                }
+                catch {
                     $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
-                    if($ErrorReturnWEC) {
+                    if ($ErrorReturnWEC) {
                         # this happens when run in local runspace
-                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
-                    } else {
+                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n", " ") | select-object -Unique))
+                    }
+                    else {
                         # this happens when run in remote runspace
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                     }
@@ -557,23 +575,32 @@ function Set-WEFSubscription {
                         }
                         Default { Write-PSFMessage -Level Warning -Message "Error recreating subscription! wecutil.exe message: $($ErrorMsg)" -Target $subscription.ComputerName -EnableException $true}
                     }
-                    Clear-Variable -Name ErrorReturn -Force
+                    Clear-Variable -Name ErrorReturn -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                 }
 
                 # Cleanup the xml garbage (temp file)
-                if(-not $result) {
+                if (-not $result) {
                     Write-PSFMessage -Level Verbose -Message "Changes done. Going to delete temporary config file" -Target $subscription.ComputerName
                     Invoke-PSFCommand @invokeParams -ScriptBlock { Get-ChildItem -Path "$env:TEMP\$( $args[2] )" | Remove-Item -Force -Confirm:$false }
-                } else {
+                }
+                else {
                     Write-PSFMessage -Level Warning -Message "Error deleting temp files! $($ErrorReturn)" -Target $subscription.ComputerName -EnableException $true
                 }
 
-                if($PassThru) {
+                if ($PassThru) {
                     Write-PSFMessage -Level Verbose -Message "Passthru specified, gathering changed subscription '$($subscription.Name)' on '$ComputerName' again"
                     try {
-                        $output = Get-WEFSubscription -Name $subscription.Name -ComputerName $ComputerName -ErrorAction Stop
-                        if($output) { $output } else { Write-Error "" -ErrorAction Stop}
-                    } catch {
+                        $paramGetWEFSubscription = @{
+                            Name         = $subscription.Name
+                            ComputerName = $ComputerName
+                            ErrorAction  = "Stop"
+                        }
+                        if ($Credential) { $paramGetWEFSubscription.Add("Credential", $Credential) }
+                        $output = Get-WEFSubscription @paramGetWEFSubscription
+                        Remove-Variable paramGetWEFSubscription -Force -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
+                        if ($output) { $output } else { Write-Error "" -ErrorAction Stop}
+                    }
+                    catch {
                         Stop-PSFFunction -Message "Error finding subscription '$($subscription.Name)' on computer $computer" -ErrorRecord $_ -EnableException $true
                     }
                 }

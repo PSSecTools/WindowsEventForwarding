@@ -89,21 +89,29 @@ function Remove-WEFSubscription {
     }
 
     Process {
-        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
-        if($PsCmdlet.ParameterSetName -ne "InputObject") {
+        if ($PsCmdlet.ParameterSetName -ne "InputObject") {
             # when not inputobject --> query for existing object to modify
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
             try {
-                $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
-            } catch {
+                $paramGetWEFSubscription = @{
+                    Name         = $Name
+                    ComputerName = $ComputerName
+                    ErrorAction  = "Stop"
+                }
+                if ($Credential) { $paramGetWEFSubscription.Add("Credential", $Credential) }
+                $InputObject = Get-WEFSubscription @paramGetWEFSubscription
+                Remove-Variable paramGetWEFSubscription -Force
+            }
+            catch {
                 Stop-PSFFunction -Message "Error finding subscription '$name' on computer $computer" -ErrorRecord $_ -EnableException $true
             }
             if (-not $InputObject) {
                 $message = "Subscription $Name not found"
-                if($ComputerName) { $message = $message + " on " + $ComputerName }
+                if ($ComputerName) { $message = $message + " on " + $ComputerName }
                 Stop-PSFFunction -Message $message  -ErrorRecord $_ -EnableException $true
             }
         }
@@ -125,27 +133,29 @@ function Remove-WEFSubscription {
                         $subscription.Name
                     )
                 }
-                if($Credential) { $invokeParams.Add("Credential", $Credential)}
+                if ($Credential) { $invokeParams.Add("Credential", $Credential)}
 
                 try {
                     $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
                         try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
                         . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" *>&1
                     }
-                    if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
-                } catch {
+                    if ($ErrorReturn) { Write-Error "" -ErrorAction Stop}
+                }
+                catch {
                     # Error on remove subscription. This should not happen - unexpected behaviour
                     $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
-                    if($ErrorReturnWEC) {
-                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
-                    } else {
+                    if ($ErrorReturnWEC) {
+                        $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n", " ") | select-object -Unique))
+                    }
+                    else {
                         $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                     }
 
                     Stop-PSFFunction -Message "Error removing subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'! $($ErrorMsg)" -Target $computer -ErrorRecord $_
                 }
 
-                if($PassThru) {
+                if ($PassThru) {
                     Write-PSFMessage -Level Verbose -Message "Passthru specified, output deleted object '$($subscription.Name)' on '$ComputerName'"
                     $subscription
                 }
