@@ -37,7 +37,7 @@ function Rename-WEFSubscription {
             Change the name of subscription "Subscription1" to "Subscription001"
 
         .EXAMPLE
-            PS C:\> Get-WEFSubscription -Name "Subscription1" | Rename-WEFSubscription "Subscription001"
+            PS C:\> Get-WEFSubscription -Name "Subscription1" | Rename-WEFSubscription -NewName "Subscription001"
 
             Change the name of "Subscription1" to "Subscription001" by using the pipeline.
 
@@ -75,7 +75,7 @@ function Rename-WEFSubscription {
         [System.Management.Automation.CredentialAttribute()]
         ${Credential},
 
-        [Parameter(Position = 1, Mandatory = $true)]
+        [Parameter(Mandatory = $true, Position = 1)]
         [ValidateNotNullOrEmpty()]
         [String]
         $NewName,
@@ -90,7 +90,7 @@ function Rename-WEFSubscription {
                 $PSBoundParameters['OutBuffer'] = 1
             }
             $wrappedCmd = $ExecutionContext.InvokeCommand.GetCommand('Set-WEFSubscription', [System.Management.Automation.CommandTypes]::Function)
-            $scriptCmd = {& $wrappedCmd -NewName $NewName @PSBoundParameters }
+            $scriptCmd = {& $wrappedCmd @PSBoundParameters }
             $steppablePipeline = $scriptCmd.GetSteppablePipeline()
             $steppablePipeline.Begin($PSCmdlet)
         } catch {
