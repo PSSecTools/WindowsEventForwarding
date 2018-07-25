@@ -289,4 +289,29 @@
         </Members>
     </Type>
     
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatus_inprogress</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SubscriptionName</Name>
+                <GetScriptBlock>
+                    $this.SubscriptionId.toString()
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SubscriptionStatus</Name>
+                <GetScriptBlock>
+                    $this.SubscriptionRuntimeStatus
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SubscriptionErrorCode</Name>
+                <GetScriptBlock>
+                    $this.SubscriptionRuntimeStatus
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
 </Types>
