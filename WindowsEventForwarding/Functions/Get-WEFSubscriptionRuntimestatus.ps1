@@ -82,17 +82,18 @@ function Get-WEFSubscriptionRuntimestatus {
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
-        if($PsCmdlet.ParameterSetName -ne "InputObject") {
+        if ($PsCmdlet.ParameterSetName -ne "InputObject") {
             # when not inputobject --> query for existing object to modify
             Write-PSFMessage -Level Verbose -Message "Gathering $ComputerName for subscription $Name"
             try {
                 $InputObject = Get-WEFSubscription -Name $Name -ComputerName $ComputerName -ErrorAction Stop
-            } catch {
+            }
+            catch {
                 Stop-PSFFunction -Message "Error finding subscription '$name' on computer $computer" -ErrorRecord $_ -EnableException $true
             }
             if (-not $InputObject) {
                 $message = "Subscription $Name not found"
-                if($ComputerName) { $message = $message + " on " + $ComputerName }
+                if ($ComputerName) { $message = $message + " on " + $ComputerName }
                 Stop-PSFFunction -Message $message  -ErrorRecord $_ -EnableException $true
             }
         }
@@ -113,81 +114,86 @@ function Get-WEFSubscriptionRuntimestatus {
                     $subscription.Name
                 )
             }
-            if($Credential) { $invokeParams.Add("Credential", $Credential)}
+            if ($Credential) { $invokeParams.Add("Credential", $Credential)}
 
             try {
                 $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
                     try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
                     $output = . "$env:windir\system32\wecutil.exe" "get-subscriptionruntimestatus" "$($args[0])" *>&1
                     $wecExceptions = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
-                    if($wecExceptions) {
+                    if ($wecExceptions) {
                         Write-Error -Message "$([string]::Join(" ", $wecExceptions.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop
-                    } else {
+                    }
+                    else {
                         $output | Where-Object pstypenames -contains 'System.String'
                     }
                 }
-                if($ErrorReturn) { Write-Error "" -ErrorAction Stop}
-            } catch {
+                if ($ErrorReturn) { Write-Error "" -ErrorAction Stop}
+            }
+            catch {
                 $ErrorReturnWEC = $ErrorReturn | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } | select-object -Unique
-                if($ErrorReturnWEC) {
-                    $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n"," ") | select-object -Unique))
-                } else {
+                if ($ErrorReturnWEC) {
+                    $ErrorMsg = [string]::Join(" ", ($ErrorReturnWEC.Exception.Message.Replace("`r`n", " ") | select-object -Unique))
+                }
+                else {
                     $ErrorMsg = [string]::Join(" ", ($ErrorReturn.Exception.Message | select-object -Unique))
                 }
 
                 Stop-PSFFunction -Message "Error resuming subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'! $($ErrorMsg)" -ErrorRecord $_
             }
+            #endregion  query status information on subscription from system
 
-            # matching wecutil output and compiling output object
-            if([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>\S*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
+            #region matching wecutil output and compiling output object
+            if ([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>\S*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
                 $SubscriptionRuntimeStatus = $Matches['SubscriptionRuntimeStatus']
                 $keys = $Matches.keys | Where-Object { $_ -like "Subscription*" }
 
                 $hashTableSubscriptionStatus = [ordered]@{}
-                foreach($key in $keys) {
+                foreach ($key in $keys) {
                     $hashTableSubscriptionStatus.Add($key, $Matches[$key])
                 }
 
-                if($SubscriptionRuntimeStatus -eq 'Active' -or $SubscriptionRuntimeStatus -eq 'Disabled') {
+                if ($SubscriptionRuntimeStatus -eq 'Active' -or $SubscriptionRuntimeStatus -eq 'Disabled') {
                     $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '\t{2}(?<SourceId>\S*)\n(?<SourceIdProperties>(\t{3}.*(\n|$))*)'
-                    if($matchEventSources) {
-                        foreach($eventSource in $matchEventSources.Matches) {
+                    if ($matchEventSources) {
+                        foreach ($eventSource in $matchEventSources.Matches) {
                             $eventSourceProperties = (Select-String -InputObject $eventSource.Groups['SourceIdProperties'].Value -AllMatches -Pattern '\t{3}(?<SourcePropertyKey>\S*): (?<SourcePropertyValue>(.*))').Matches
 
                             $hashTableEventSources = [ordered]@{}
-                            foreach($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
+                            foreach ($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
                                 $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
                             }
                             $hashTableEventSources.Add("SourceId", $eventSource.Groups['SourceId'].Value)
-                            foreach($eventSourceProperty in $eventSourceProperties) {
+                            foreach ($eventSourceProperty in $eventSourceProperties) {
                                 $hashTableEventSources.Add("Source$($eventSourceProperty.Groups['SourcePropertyKey'].Value)", $eventSourceProperty.Groups['SourcePropertyValue'].Value)
                             }
                             $outputObject = [PSCustomObject]$hashTableEventSources
-                            $outputObject.pstypenames.Insert(0,$BaseType)
-                            $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
-                            $outputObject
                         }
-                    } else {
+                    }
+                    else {
                         $hashTableEventSources = [ordered]@{}
-                        foreach($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
+                        foreach ($key in ($Keys | Where-Object {$_ -notlike "SubscriptionEventSources"})) {
                             $hashTableEventSources.Add($key, $hashTableSubscriptionStatus[$key])
                         }
                         $outputObject = [PSCustomObject]$hashTableEventSources
                     }
-                } else {
+                }
+                else {
                     $outputObject = [PSCustomObject]$hashTableSubscriptionStatus
                 }
 
-                $outputObject.pstypenames.Insert(0,$BaseType)
-                $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus")
-                $outputObject.pstypenames.Insert(0,"$($BaseType).SubscriptionRuntimeStatus$($SubscriptionRuntimeStatus)")
+                Add-Member -InputObject $outputObject -MemberType NoteProperty -Name "Subscription" -Value $subscription
+                $outputObject.pstypenames.Insert(0, $BaseType)
+                $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus")
+                $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus$($SubscriptionRuntimeStatus)")
                 $outputObject
 
-            } else {
+            }
+            else {
                 $message = "Warning! Can't retrieve runtimestatus for subscription '$($subscription.Name)' on computer '$($subscription.ComputerName)'"
                 Write-PSFMessage -Level Warning -Message $message -Target $subscription.ComputerName -EnableException $true
             }
-            #endregion  query status information on subscription from system
+            #endregion matching wecutil output and compiling output object
         }
     }
 
