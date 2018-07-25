@@ -78,7 +78,7 @@ function Get-WEFSubscriptionRuntimestatus {
     }
 
     Process {
-        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
@@ -144,7 +144,7 @@ function Get-WEFSubscriptionRuntimestatus {
             #endregion  query status information on subscription from system
 
             #region matching wecutil output and compiling output object
-            if ([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>\S*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
+            if ([string]::Join("`n", $invokeOutput) -match '(Subscription: (?<SubscriptionId>.*)\n\tRunTimeStatus: (?<SubscriptionRuntimeStatus>\S*)\n\tLastError: (?<SubscriptionLastError>\S*)(\n|$))(\tEventSources:\n(?<SubscriptionEventSources>(.*\n*)*$)|(\tErrorMessage: (?<SubscriptionErrorMessage>.*)\n)\tErrorTime: (?<SubscriptionErrorTime>.*$)|$)') {
                 $SubscriptionRuntimeStatus = $Matches['SubscriptionRuntimeStatus']
                 $keys = $Matches.keys | Where-Object { $_ -like "Subscription*" }
 
