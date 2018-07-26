@@ -323,29 +323,118 @@
             <ScriptProperty>
                 <Name>ErrorCode</Name>
                 <GetScriptBlock>
-                    $this.SubscriptionLastError
+                    [int]$this.SubscriptionLastError
                 </GetScriptBlock>
             </ScriptProperty>
         </Members>
     </Type>
 
     <Type>
-        <Name>WEF.SubscriptionRuntimeStatusInactive</Name>
+        <Name>WEF.SubscriptionRuntimeStatus.Inactive</Name>
         <Members>
             <ScriptProperty>
-                <Name>ErrorMessage</Name>
-                <GetScriptBlock>
-                    Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SubscriptionErrorMessage
-                </GetScriptBlock>
-            </ScriptProperty>
-
-            <ScriptProperty>
-                <Name>ErrorTime</Name>
+                <Name>ErrorTimeStamp</Name>
                 <GetScriptBlock>
                     [datetime]$this.SubscriptionErrorTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
                 </GetScriptBlock>
             </ScriptProperty>
 
+            <ScriptProperty>
+                <Name>ErrorText</Name>
+                <GetScriptBlock>
+                    Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SubscriptionErrorMessage
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatus.DisabledSourceDisabled</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SourceName</Name>
+                <GetScriptBlock>
+                    $this.SourceId
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceStatus</Name>
+                <GetScriptBlock>
+                    $this.SourceRunTimeStatus
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceErrorCode</Name>
+                <GetScriptBlock>
+                    [int]$this.SourceLastError
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatus.Active</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SourceName</Name>
+                <GetScriptBlock>
+                    $this.SourceId
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceStatus</Name>
+                <GetScriptBlock>
+                    $this.SourceRunTimeStatus
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceErrorCode</Name>
+                <GetScriptBlock>
+                    [int]$this.SourceLastError
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatus.ActiveSourceActive</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SourceLastHeartBeat</Name>
+                <GetScriptBlock>
+                    [datetime]$this.SourceLastHeartbeatTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                </GetScriptBlock>
+            </ScriptProperty>
+        </Members>
+    </Type>
+
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatus.ActiveSourceTrying</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>SourceTimestampError</Name>
+                <GetScriptBlock>
+                    [datetime]$this.SourceErrorTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceTimestampNextRetry</Name>
+                <GetScriptBlock>
+                    [datetime]$this.SourceNextRetryTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>SourceErrorText</Name>
+                <GetScriptBlock>
+                    Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SourceErrorMessage
+                </GetScriptBlock>
+            </ScriptProperty>
         </Members>
     </Type>
 

@@ -185,7 +185,11 @@ function Get-WEFSubscriptionRuntimestatus {
                 Add-Member -InputObject $outputObject -MemberType NoteProperty -Name "Subscription" -Value $subscription
                 $outputObject.pstypenames.Insert(0, $BaseType)
                 $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus")
-                $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus$($SubscriptionRuntimeStatus)")
+                $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus.$($SubscriptionRuntimeStatus)")
+                if($outputObject.SourceRunTimeStatus) {
+                    $outputObject.pstypenames.Insert(0, "$($BaseType).SubscriptionRuntimeStatus.$($SubscriptionRuntimeStatus)Source$($outputObject.SourceRunTimeStatus)")
+                }
+                if(-not $outputObject.subscription.PSComputerName) { Add-Member -InputObject $outputObject -MemberType NoteProperty -Name "PSComputerName" -Value $outputObject.subscription.PSComputerName -Force }
                 $outputObject
 
             }
