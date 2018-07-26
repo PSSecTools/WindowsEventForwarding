@@ -290,28 +290,63 @@
     </Type>
 
     <Type>
-        <Name>WEF.SubscriptionRuntimeStatus_inprogress</Name>
+        <Name>WEF.SubscriptionRuntimeStatus</Name>
         <Members>
             <ScriptProperty>
-                <Name>SubscriptionName</Name>
+                <Name>ComputerName</Name>
+                <GetScriptBlock>
+                    $this.Subscription.ComputerName
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>Name</Name>
                 <GetScriptBlock>
                     $this.SubscriptionId.toString()
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
-                <Name>SubscriptionStatus</Name>
+                <Name>Enabled</Name>
+                <GetScriptBlock>
+                    $this.Subscription.Enabled
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>Status</Name>
                 <GetScriptBlock>
                     $this.SubscriptionRuntimeStatus
                 </GetScriptBlock>
             </ScriptProperty>
 
             <ScriptProperty>
-                <Name>SubscriptionErrorCode</Name>
+                <Name>ErrorCode</Name>
                 <GetScriptBlock>
-                    $this.SubscriptionRuntimeStatus
+                    $this.SubscriptionLastError
                 </GetScriptBlock>
             </ScriptProperty>
         </Members>
     </Type>
+
+    <Type>
+        <Name>WEF.SubscriptionRuntimeStatusInactive</Name>
+        <Members>
+            <ScriptProperty>
+                <Name>ErrorMessage</Name>
+                <GetScriptBlock>
+                    (Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SubscriptionErrorMessage)
+                </GetScriptBlock>
+            </ScriptProperty>
+
+            <ScriptProperty>
+                <Name>ErrorTime</Name>
+                <GetScriptBlock>
+                    [datetime]$this.SubscriptionErrorTime | Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                </GetScriptBlock>
+            </ScriptProperty>
+
+        </Members>
+    </Type>
+
 </Types>
