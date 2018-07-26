@@ -335,7 +335,7 @@
             <ScriptProperty>
                 <Name>ErrorMessage</Name>
                 <GetScriptBlock>
-                    (Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SubscriptionErrorMessage)
+                    Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $this.SubscriptionErrorMessage
                 </GetScriptBlock>
             </ScriptProperty>
 

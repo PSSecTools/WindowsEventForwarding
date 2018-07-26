@@ -1,4 +1,4 @@
-function Format-WEFSubscriptionRuntimeSatusErrorMessage {
+function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
     <#
         .Synopsis
             Regex helper function for runtimestatus error messages from WEF subscription  
@@ -28,10 +28,10 @@ function Format-WEFSubscriptionRuntimeSatusErrorMessage {
         [switch]
         $NoQuotReplace
     )
-    
+
     begin {
     }
-    
+
     process {
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
@@ -52,7 +52,9 @@ function Format-WEFSubscriptionRuntimeSatusErrorMessage {
             $Message
         }
     }
-    
+
     end {
     }
 }
+
+(Get-Command -Name Format-WEFSubscriptionRuntimeSatusErrorMessage).Visibility = 'Private'

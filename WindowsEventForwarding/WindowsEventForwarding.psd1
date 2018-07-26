@@ -70,7 +70,6 @@ All cmdlets are build with
 
 	# Functions to export from this module
 	FunctionsToExport  = @(
-		'Format-WEFSubscriptionRuntimeSatusErrorMessage'
 		'Disable-WEFSubscription'
 		'Enable-WEFSubscription'
 		'Get-WEFSubscription'
