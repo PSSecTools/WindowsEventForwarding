@@ -31,6 +31,9 @@ function Rename-WEFSubscription {
         .PARAMETER Credential
             The credentials to use on remote calls.
 
+        .PARAMETER PassThru
+            Output the changed subscription on the end of the operation
+
         .EXAMPLE
             PS C:\> Rename-WEFSubscription -Name "Subscription1" -NewName "Subscription001"
 

@@ -1,17 +1,17 @@
 function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
     <#
         .Synopsis
-            Regex helper function for runtimestatus error messages from WEF subscription  
+            Regex helper function for runtimestatus error messages from WEF subscription
 
         .DESCRIPTION
             Helper function for parsing the messagetext out of a WEF Status error message object (xml styled)
 
         .PARAMETER Message
-            The xml errormesage from the RuntimeStatus  
+            The xml errormesage from the RuntimeStatus
 
-        .PARAMETER NoQuotReplace 
+        .PARAMETER NoQuotReplace
             Message often contain &quot representing '.
-            If this switch is specified, no replacement of &quot will be done for the message.   
+            If this switch is specified, no replacement of &quot will be done for the message.
 
         .NOTES
             Author: Andreas Bellstedt
@@ -44,7 +44,7 @@ function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
             }
             else {
                 Write-PSFMessage -Level Debug -Message "Message match found. Replacement of &quot done before outputting message."
-                $result.Replace('&quot;', "'") 
+                $result.Replace('&quot;', "'")
             }
         }
         else {

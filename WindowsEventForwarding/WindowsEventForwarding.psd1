@@ -3,7 +3,7 @@
 	ModuleToProcess = 'WindowsEventForwarding.psm1'
 
 	# Version number of this module.
-	ModuleVersion = '1.0.0.0'
+	ModuleVersion = '1.0.0.1'
 
 	# ID used to uniquely identify this module
 	GUID = '5a870944-db6c-4dc2-90f1-738a8c3a07f4'

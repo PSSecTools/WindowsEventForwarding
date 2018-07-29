@@ -1,5 +1,4 @@
 New-Variable -Option ReadOnly, Constant -Scope Script -Name ModuleRoot -Value $PSScriptRoot
-New-Variable -Option ReadOnly, Constant -Scope Script -Name ModuleVersion -Value "1.0.0.0"
 New-Variable -Option ReadOnly, Constant -Scope Script -Name BaseType -Value "WEF"
 
 function Import-ModuleFile

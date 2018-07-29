@@ -102,6 +102,9 @@ function Set-WEFSubscription {
         .PARAMETER Expires
             Specifies a datetime when the subscription expires and computers will be no more active.
 
+        .PARAMETER PassThru
+            Output the changed subscription on the end of the operation 
+
         .EXAMPLE
             PS C:\> Set-WEFSubscription -Name "Subscription1" -NewName "Subscription1New"
 
