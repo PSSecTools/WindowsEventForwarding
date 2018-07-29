@@ -284,7 +284,7 @@ function New-WEFSubscription {
     }
 
     Process {
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
@@ -481,7 +481,7 @@ function New-WEFSubscription {
                     try {
                         Write-PSFMessage -Level Verbose -Message "Create-subscription with wecutil.exe from temporary config file." -Target $computer
                         $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
-                            try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                            try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                             $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[1] )" *>&1
                             $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
                             if($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }

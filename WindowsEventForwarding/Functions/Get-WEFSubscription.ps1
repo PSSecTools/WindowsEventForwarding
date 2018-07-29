@@ -97,11 +97,11 @@ function Get-WEFSubscription {
         [string]
         $Type,
 
-        [ValidateSet($true, $false)]
+        [ValidateSet("True", "False")]
         [String]
         $Enabled,
 
-        [ValidateSet($true, $false)]
+        [ValidateSet("True", "False")]
         [string]
         $ReadExistingEvents,
 
@@ -128,7 +128,7 @@ function Get-WEFSubscription {
     }
 
     Process {
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
         #region parameterset workarround
         # Workarround parameter binding behaviour of powershell in combination with ComputerName Piping
@@ -213,7 +213,7 @@ function Get-WEFSubscription {
                 }
             }
             #endregion Processing Events
-        
+
             Remove-Variable -Name paramInvokeCmd -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
         }
     }

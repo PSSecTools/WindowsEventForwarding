@@ -85,7 +85,7 @@ function Resume-WEFSubscription {
     }
 
     Process {
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
@@ -133,7 +133,7 @@ function Resume-WEFSubscription {
 
                 try {
                     $null = Invoke-PSFCommand @invokeParams -ScriptBlock {
-                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                         . "$env:windir\system32\wecutil.exe" "retry-subscription" "$($args[0])" *>&1
                     }
                     if ($ErrorReturn) { Write-Error "" -ErrorAction Stop}

@@ -78,7 +78,7 @@ function Get-WEFSubscriptionRuntimestatus {
     }
 
     Process {
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
@@ -118,7 +118,7 @@ function Get-WEFSubscriptionRuntimestatus {
 
             try {
                 $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
-                    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                    try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                     $output = . "$env:windir\system32\wecutil.exe" "get-subscriptionruntimestatus" "$($args[0])" *>&1
                     $wecExceptions = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
                     if ($wecExceptions) {

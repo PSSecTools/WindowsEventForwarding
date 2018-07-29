@@ -103,7 +103,7 @@ function Set-WEFSubscription {
             Specifies a datetime when the subscription expires and computers will be no more active.
 
         .PARAMETER PassThru
-            Output the changed subscription on the end of the operation 
+            Output the changed subscription on the end of the operation
 
         .EXAMPLE
             PS C:\> Set-WEFSubscription -Name "Subscription1" -NewName "Subscription1New"
@@ -228,7 +228,7 @@ function Set-WEFSubscription {
     }
 
     Process {
-        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-PSFMessage -Level Significant -Message "Exception while setting UTF8 OutputEncoding. Continue script." -ErrorRecord $_ }
         Write-PSFMessage -Level Debug -Message "ParameterNameSet: $($PsCmdlet.ParameterSetName)"
 
         #region query specified subscription when not piped in
@@ -508,7 +508,7 @@ function Set-WEFSubscription {
                 try {
                     Write-PSFMessage -Level Verbose -Message "Delete existing subscription with wecutil.exe." -Target $subscription.ComputerName
                     $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
-                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                         $output = . "$env:windir\system32\wecutil.exe" "delete-subscription" "$($args[0])" *>&1
                         $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
                         if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
@@ -534,7 +534,7 @@ function Set-WEFSubscription {
                 try {
                     Write-PSFMessage -Level Verbose -Message "Recreate subscription with wecutil.exe from temporary config file." -Target $subscription.ComputerName
                     $invokeOutput = Invoke-PSFCommand @invokeParams -ScriptBlock {
-                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+                        try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { Write-Information -MessageData "Exception while setting UTF8 OutputEncoding. Continue script." }
                         $output = . "$env:windir\system32\wecutil.exe" "create-subscription" "$env:TEMP\$( $args[2] )" *>&1
                         $output = $output | Where-Object { $_.InvocationInfo.MyCommand.Name -like 'wecutil.exe' } *>&1
                         if ($output) { Write-Error -Message "$([string]::Join(" ", $output.Exception.Message.Replace("`r`n"," ")))" -ErrorAction Stop }
