@@ -55,4 +55,4 @@ In the future, the configuration management will also be done with PSFramework, 
 
 # Changelog
 
-Changes will be tracked in the [ChangeLog.md](ChangeLog.md)
+Changes will be tracked in the [changelog.md](changelog.md)
