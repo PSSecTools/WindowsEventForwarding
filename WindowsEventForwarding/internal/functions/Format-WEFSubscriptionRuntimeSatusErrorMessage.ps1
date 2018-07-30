@@ -1,4 +1,4 @@
-function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
+﻿function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
     <#
         .Synopsis
             Regex helper function for runtimestatus error messages from WEF subscription
