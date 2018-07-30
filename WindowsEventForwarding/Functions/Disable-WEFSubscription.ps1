@@ -1,4 +1,4 @@
-function Disable-WEFSubscription {
+﻿function Disable-WEFSubscription {
     <#
         .Synopsis
             Disable-WEFSubscription

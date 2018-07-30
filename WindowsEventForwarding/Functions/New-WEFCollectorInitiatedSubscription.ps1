@@ -1,4 +1,4 @@
-function New-WEFCollectorInitiatedSubscription {
+﻿function New-WEFCollectorInitiatedSubscription {
     <#
         .Synopsis
             New-WEFCollectorInitiatedSubscription

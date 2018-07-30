@@ -1,4 +1,4 @@
-function Rename-WEFSubscription {
+﻿function Rename-WEFSubscription {
     <#
         .Synopsis
             Rename-WEFSubscription

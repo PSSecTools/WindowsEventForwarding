@@ -1,4 +1,4 @@
-function Get-WEFSubscription {
+﻿function Get-WEFSubscription {
     <#
         .Synopsis
             Get-WEFSubscription

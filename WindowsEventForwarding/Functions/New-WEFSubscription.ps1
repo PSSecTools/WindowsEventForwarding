@@ -1,4 +1,4 @@
-function New-WEFSubscription {
+﻿function New-WEFSubscription {
     <#
         .Synopsis
             New-WEFSubscription

@@ -5,7 +5,7 @@ SHORT DESCRIPTION
 	Explains how to use the WindowsEventForwarding powershell module
 	
 LONG DESCRIPTION
-	<Insert Content here>
+	Will be done later.
 
 KEYWORDS
 	WindowsEventForwarding

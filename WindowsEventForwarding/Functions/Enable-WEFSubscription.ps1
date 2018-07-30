@@ -1,4 +1,4 @@
-function Enable-WEFSubscription {
+﻿function Enable-WEFSubscription {
     <#
         .Synopsis
             Enable-WEFSubscription

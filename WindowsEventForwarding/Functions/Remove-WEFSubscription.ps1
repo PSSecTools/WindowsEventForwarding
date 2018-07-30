@@ -1,4 +1,4 @@
-function Remove-WEFSubscription {
+﻿function Remove-WEFSubscription {
     <#
         .Synopsis
             Remove-WEFSubscription

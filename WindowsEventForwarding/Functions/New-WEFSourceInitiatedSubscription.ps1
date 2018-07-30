@@ -1,4 +1,4 @@
-function New-WEFSourceInitiatedSubscription {
+﻿function New-WEFSourceInitiatedSubscription {
     <#
         .Synopsis
             New-WEFSourceInitiatedSubscription

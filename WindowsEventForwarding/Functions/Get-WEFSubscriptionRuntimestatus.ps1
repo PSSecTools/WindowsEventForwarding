@@ -1,4 +1,4 @@
-function Get-WEFSubscriptionRuntimestatus {
+﻿function Get-WEFSubscriptionRuntimestatus {
     <#
         .Synopsis
             Get-WEFSubscriptionRuntimestatus

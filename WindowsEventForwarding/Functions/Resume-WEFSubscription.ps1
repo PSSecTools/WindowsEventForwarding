@@ -1,4 +1,4 @@
-function Resume-WEFSubscription {
+﻿function Resume-WEFSubscription {
     <#
         .Synopsis
             Resume-WEFSubscription
