@@ -97,6 +97,14 @@
         .PARAMETER Expires
             The date when the created subscription will expire.
 
+        .PARAMETER WhatIf
+
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
         .EXAMPLE
             PS C:\> New-WEFCollectorInitiatedSubscription -Name "MySubscription" -LogFile "ForwardedEvents" -Query '<Select Path="Security">*[System[(Level=1 )]]</Select>' -SourceDomainComputer "Server1"
 

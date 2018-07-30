@@ -1,7 +1,8 @@
 # Changelog 
-## Version 1.0.0.3 : 2018-07-30 
+## Version 1.0.0.4 : 2018-07-30 
 - Fix: some documentation
 - Fix: code review to meet PSScriptAnalyzer rules
+- Fix: uncritical error in Set-WEFSubscription (remove-variable didn't work)
 
 ## Version 1.0.0.0 : 2018-07-27 initial version
 - 11 functions implemented

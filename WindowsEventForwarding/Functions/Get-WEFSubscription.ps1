@@ -10,6 +10,9 @@
             The computer(s) to connect to.
             Supports PSSession objects, will reuse sessions.
 
+        .PARAMETER Session
+            A PSSession object for remote connection to another machine
+
         .PARAMETER Name
             Name of the subscription to filter by.
 

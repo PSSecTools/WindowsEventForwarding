@@ -13,6 +13,11 @@ function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
             Message often contain &quot representing '.
             If this switch is specified, no replacement of &quot will be done for the message.
 
+        .EXAMPLE
+            PS C:\> Format-WEFSubscriptionRuntimeSatusErrorMessage -Message $Message
+
+            Parse out the Message block from a WEFsubscriptionRuntimeStatus XML message object
+
         .NOTES
             Author: Andreas Bellstedt
 
@@ -20,6 +25,7 @@ function Global:Format-WEFSubscriptionRuntimeSatusErrorMessage {
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
     [CmdletBinding()]
+    [OutputType([System.String[]])]
     param (
         [Parameter(ValueFromPipeline = $true, Position = 0)]
         [String[]]

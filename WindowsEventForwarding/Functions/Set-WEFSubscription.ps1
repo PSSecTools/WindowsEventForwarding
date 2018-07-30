@@ -105,6 +105,18 @@
         .PARAMETER PassThru
             Output the changed subscription on the end of the operation
 
+        .PARAMETER WhatIf
+
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+        .PARAMETER PassThru
+
+            If this switch is enabled, the function will return the working object to the pipeline for further processing
+
         .EXAMPLE
             PS C:\> Set-WEFSubscription -Name "Subscription1" -NewName "Subscription1New"
 
@@ -243,7 +255,7 @@
                 }
                 if ($Credential) { $paramGetWEFSubscription.Add("Credential", $Credential) }
                 $InputObject = Get-WEFSubscription @paramGetWEFSubscription
-                Remove-Variable paramGetWEFSubscription -Force -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
+                Remove-Variable paramGetWEFSubscription -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
             }
             catch {
                 Stop-PSFFunction -Message "Error finding subscription '$name' on computer $computer" -ErrorRecord $_
@@ -600,7 +612,7 @@
                         }
                         if ($Credential) { $paramGetWEFSubscription.Add("Credential", $Credential) }
                         $output = Get-WEFSubscription @paramGetWEFSubscription
-                        Remove-Variable paramGetWEFSubscription -Force -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
+                        Remove-Variable paramGetWEFSubscription -Force -Confirm:$false -Verbose:$false -WhatIf:$false -Debug:$false
                         if ($output) { $output } else { Write-Error "" -ErrorAction Stop}
                     }
                     catch {

@@ -28,6 +28,18 @@
         .PARAMETER Credential
             The credentials to use on remote calls.
 
+        .PARAMETER WhatIf
+
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+        .PARAMETER Confirm
+
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+        .PARAMETER PassThru
+
+            If this switch is enabled, the function will return the working object to the pipeline for further processing
+
         .EXAMPLE
             PS C:\> Enable-WEFSubscription -Name "Subscription1"
 
