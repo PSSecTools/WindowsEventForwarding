@@ -59,6 +59,7 @@
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSShouldProcess", "")]
     [CmdletBinding( DefaultParameterSetName = 'ComputerName',
         SupportsShouldProcess = $true,
         ConfirmImpact = 'medium')]

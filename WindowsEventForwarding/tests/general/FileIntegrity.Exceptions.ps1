@@ -3,9 +3,9 @@ $global:BannedCommands = @(
 	'Write-Host',
 	'Write-Verbose',
 	'Write-Warning',
-	'Write-Error',
+	#'Write-Error',
 	'Write-Output',
-	'Write-Information',
+	#'Write-Information',
 	'Write-Debug'
 )
 

@@ -44,6 +44,7 @@
         .LINK
             https://github.com/AndiBellstedt/WindowsEventForwarding
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
     [CmdletBinding( DefaultParameterSetName = 'ComputerName',
         ConfirmImpact = 'low')]
     Param(
