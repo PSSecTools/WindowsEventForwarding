@@ -157,6 +157,7 @@
                 if ($SubscriptionRuntimeStatus -eq 'Active' -or $SubscriptionRuntimeStatus -eq 'Disabled') {
                     $matchEventSources = Select-String -InputObject $hashTableSubscriptionStatus['SubscriptionEventSources'] -AllMatches -Pattern '\t{2}(?<SourceId>\S*)\n(?<SourceIdProperties>(\t{3}.*(\n|$))*)'
                     if ($matchEventSources) {
+                        $outputObject = @()
                         foreach ($eventSource in $matchEventSources.Matches) {
                             $eventSourceProperties = (Select-String -InputObject $eventSource.Groups['SourceIdProperties'].Value -AllMatches -Pattern '\t{3}(?<SourcePropertyKey>\S*): (?<SourcePropertyValue>(.*))').Matches
 
@@ -168,7 +169,7 @@
                             foreach ($eventSourceProperty in $eventSourceProperties) {
                                 $hashTableEventSources.Add("Source$($eventSourceProperty.Groups['SourcePropertyKey'].Value)", $eventSourceProperty.Groups['SourcePropertyValue'].Value)
                             }
-                            $outputObject = [PSCustomObject]$hashTableEventSources
+                            $outputObject += [PSCustomObject]$hashTableEventSources
                         }
                     }
                     else {

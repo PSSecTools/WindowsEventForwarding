@@ -1,4 +1,7 @@
 # Changelog 
+## Version 1.0.0.5 : 2018-08-04 
+- Fix: outputting multiple object on WEFsubscriptionRuntimeStatus for active subscriptions. Error was - only the last computer object was outputted.
+
 ## Version 1.0.0.4 : 2018-07-30 
 - Fix: some documentation
 - Fix: code review to meet PSScriptAnalyzer rules
