@@ -18,13 +18,11 @@ Effectively, the module is a wrapper around the command line utility ```wecutil.
 
 #
 ## Installation
-The module isn't in the PowerShellGallery, yet.
-
-In order to get started with the latest production build, simply run this in an elevated console:
- ```powershell
- Invoke-WebRequest "https://raw.githubusercontent.com/AndiBellstedt/WindowsEventForwarding/master/install.ps1" -UseBasicParsing | Invoke-Expression
- ```
- This will install the module on your system, ready for use
+In order to get started with the module, simply run this in an elevated console:
+```powershell
+Install-Module WindowsEventForwarding
+```
+This will install the module on your system, ready for use
 
 ## Example
 Every function has examples:
