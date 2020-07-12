@@ -14,3 +14,7 @@ WindowsEventForwarding/WindowsEventForwarding.psproj
 WindowsEventForwarding/WindowsEventForwarding.psproj.bak
 WindowsEventForwarding/WindowsEventForwarding.psprojs
 WindowsEventForwarding/WindowsEventForwarding.psproj
+
+
+# ignore pester test result files
+TestResults/*
